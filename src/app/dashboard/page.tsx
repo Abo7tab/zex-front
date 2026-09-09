@@ -86,7 +86,7 @@ export default function DashboardPage() {
     if (!device) return;
     setActionLoading(true);
     try {
-      await stopScreamDevice(device.id, passwordInput);
+      await stopScreamDevice(device.id, passwordInput.trim());
       setShowPasswordModal(false);
       setPasswordInput('');
       fetchDevices();
@@ -107,7 +107,7 @@ export default function DashboardPage() {
     if (!device) return;
     setActionLoading(true);
     try {
-      await markFound(device.id, pinInput);
+      await markFound(device.id, pinInput.trim());
       setShowPinModal(false);
       setPinInput('');
       fetchDevices();
