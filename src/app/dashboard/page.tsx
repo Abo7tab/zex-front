@@ -43,17 +43,21 @@ export default function DashboardPage() {
     }
   }, [device?.device_uid]);
 
-  const isScreaming = rtState?.is_screaming ?? device?.is_screaming;
-  const isStolen = rtState?.is_stolen ?? device?.is_stolen;
-  const isSearching = rtState?.is_searching ?? device?.is_searching;
-  const latitude = rtState?.location?.latitude ?? device?.last_location?.latitude;
-  const longitude = rtState?.location?.longitude ?? device?.last_location?.longitude;
-  const accuracy = rtState?.location?.accuracy ?? device?.last_location?.accuracy;
+  const statusObj = rtState?.status || rtState || {};
+  const locObj = rtState?.last_location || rtState?.location || device?.last_location || {};
+
+  const isScreaming = statusObj.is_screaming ?? device?.is_screaming;
+  const isStolen = statusObj.is_stolen ?? device?.is_stolen;
+  const isSearching = statusObj.is_searching ?? device?.is_searching;
+  const batteryLevel = statusObj.battery_level ?? device?.battery_level ?? 0;
+  const lastHeartbeatStr = statusObj.last_heartbeat_at ?? device?.last_heartbeat_at;
+
+  const latitude = locObj.latitude ?? device?.last_location?.latitude;
+  const longitude = locObj.longitude ?? device?.last_location?.longitude;
+  const accuracy = locObj.accuracy ?? device?.last_location?.accuracy;
   
-  const lastHeartbeatStr = rtState?.last_heartbeat_at ?? device?.last_heartbeat_at;
   const lastHeartbeatAt = lastHeartbeatStr ? new Date(lastHeartbeatStr).getTime() : 0;
   const isOnline = (Date.now() - lastHeartbeatAt) < 5 * 60 * 1000;
-  const batteryLevel = rtState?.battery_level ?? device?.battery_level ?? 0;
 
   const handleLocate = async () => {
     if (!device) return;
@@ -228,7 +232,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex-1 relative z-10">
-            {latitude && longitude ? (
+            {latitude != null && longitude != null ? (
                <DeviceMap 
                  latitude={latitude} 
                  longitude={longitude} 

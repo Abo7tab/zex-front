@@ -16,5 +16,5 @@ export const subscribeToDeviceState = (deviceUid: string, callback: (data: any) 
       callback(snapshot.val());
     }
   });
-  return () => off(deviceRef, 'value', unsubscribe);
+  return unsubscribe;
 };
