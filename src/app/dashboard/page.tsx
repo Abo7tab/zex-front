@@ -10,6 +10,7 @@ import DeviceMap from '@/components/map/DeviceMap';
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [device, setDevice] = useState<any>(null);
+  const [devices, setDevices] = useState<any[]>([]);
   const [rtState, setRtState] = useState<any>(null);
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -27,6 +28,7 @@ export default function DashboardPage() {
     try {
       const devices = await getDevices();
       if (devices && devices.length > 0) {
+        setDevices(devices);
         setDevice(devices[0]);
       }
     } catch (err) {
@@ -140,15 +142,29 @@ export default function DashboardPage() {
           
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
             {!device ? (
-              <p className="text-slate-400 text-center py-8">Loading Devices...</p>
+              <div className="flex items-center space-x-3 text-slate-500">
+                <div className="w-8 h-8 rounded-full border-2 border-slate-700 animate-spin border-t-blue-500"></div>
+                <span>Loading device profile...</span>
+              </div>
             ) : (
               <>
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-                      <Smartphone className="w-5 h-5 text-blue-400" />
-                      <span>{device.device_name}</span>
-                    </h2>
+                    {devices.length > 1 ? (
+                      <select 
+                        className="bg-slate-800 text-white font-bold text-xl rounded-lg px-3 py-1 border border-slate-700 focus:outline-none focus:border-blue-500"
+                        value={device?.id}
+                        onChange={(e) => setDevice(devices.find(d => d.id === parseInt(e.target.value)))}
+                      >
+                        {devices.map(d => (
+                          <option key={d.id} value={d.id}>{d.device_name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <h2 className="text-xl font-bold text-white flex items-center space-x-2">
+                        <span>{device.device_name}</span>
+                      </h2>
+                    )}
                     <p className="text-slate-400 text-sm mt-1">{device.device_model} • Android {device.android_version}</p>
                   </div>
                   {isOnline ? (
