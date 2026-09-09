@@ -69,8 +69,8 @@ export default function DashboardPage() {
   const toggleSearch = async () => {
     if (!device) return;
     try {
-      if (isSearching) await stopSearchMode(device.id);
-      else await startSearchMode(device.id, 30);
+      if (isSearching) { await stopSearchMode(device.id); setDevice((p: any) => ({...p, is_searching: false})); setRtState((p: any) => p ? {...p, is_searching: false} : null); }
+      else { await startSearchMode(device.id, 30); setDevice((p: any) => ({...p, is_searching: true})); setRtState((p: any) => p ? {...p, is_searching: true} : null); }
       fetchDevices();
     } catch(e) { alert('Failed to toggle search'); }
   };
@@ -80,7 +80,7 @@ export default function DashboardPage() {
     if (isScreaming) {
       setShowPasswordModal(true);
     } else {
-      try { await screamDevice(device.id); fetchDevices(); } catch(e) { alert('Failed'); }
+      try { await screamDevice(device.id); setDevice((p: any) => ({...p, is_screaming: true})); setRtState((p: any) => p ? {...p, is_screaming: true} : null); fetchDevices(); } catch(e) { alert('Failed'); }
     }
   };
 
@@ -91,6 +91,8 @@ export default function DashboardPage() {
       await stopScreamDevice(device.id, passwordInput.trim());
       setShowPasswordModal(false);
       setPasswordInput('');
+      setDevice((p: any) => ({...p, is_screaming: false}));
+      setRtState((p: any) => p ? {...p, is_screaming: false} : null);
       fetchDevices();
     } catch(e) { alert('Invalid Password'); }
     finally { setActionLoading(false); }
@@ -101,7 +103,7 @@ export default function DashboardPage() {
     if (isStolen) {
       setShowPinModal(true);
     } else {
-      try { await markStolen(device.id); fetchDevices(); } catch(e) { alert('Failed'); }
+      try { await markStolen(device.id); setDevice((p: any) => ({...p, is_stolen: true})); setRtState((p: any) => p ? {...p, is_stolen: true} : null); fetchDevices(); } catch(e) { alert('Failed'); }
     }
   };
 
@@ -112,6 +114,8 @@ export default function DashboardPage() {
       await markFound(device.id, pinInput.trim());
       setShowPinModal(false);
       setPinInput('');
+      setDevice((p: any) => ({...p, is_stolen: false}));
+      setRtState((p: any) => p ? {...p, is_stolen: false} : null);
       fetchDevices();
     } catch(e) { alert('Invalid PIN Code'); }
     finally { setActionLoading(false); }
@@ -154,7 +158,14 @@ export default function DashboardPage() {
                       <select 
                         className="bg-slate-800 text-white font-bold text-xl rounded-lg px-3 py-1 border border-slate-700 focus:outline-none focus:border-blue-500"
                         value={device?.id}
-                        onChange={(e) => setDevice(devices.find(d => d.id === parseInt(e.target.value)))}
+                        onChange={(e) => {
+                        const newId = parseInt(e.target.value);
+                        const selected = devices.find(d => d.id === newId);
+                        if (selected) {
+                          setRtState(null); // IMMEDIATELY CLEAR STALE RTDB STATE
+                          setDevice(selected);
+                        }
+                      }}
                       >
                         {devices.map(d => (
                           <option key={d.id} value={d.id}>{d.device_name}</option>
