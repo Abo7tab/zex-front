@@ -25,6 +25,12 @@ api.interceptors.response.use(
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
+    } else {
+      if (typeof window !== 'undefined') {
+        const msg = error.response?.data?.message || error.message;
+        console.error("ZEX_API_ERROR:", msg);
+        alert(`API Error: ${msg}`);
+      }
     }
     return Promise.reject(error);
   }
