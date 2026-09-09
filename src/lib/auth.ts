@@ -5,7 +5,7 @@ export const login = async (email: string, password: string) => {
   const res = await api.post('/auth/login', { email, password });
   const token = res.data?.token || res.data?.data?.token;
   if (token) {
-    Cookies.set('zex_token', token, { expires: 7 }); // 7 days
+    Cookies.set('zex_token', token, { expires: 7, secure: true, sameSite: 'strict' });
   }
   return res.data;
 };
