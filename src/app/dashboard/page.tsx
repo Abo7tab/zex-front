@@ -282,6 +282,20 @@ export default function DashboardPage() {
               </div>
               <span className="text-[11px] font-bold text-center text-slate-700">Track location</span>
             </button>
+
+            <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
+                <Trash className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-bold text-center text-slate-700">Erase data</span>
+            </button>
+
+            <button className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group opacity-70 cursor-not-allowed">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
+                <Battery className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-bold text-center text-slate-700">Extend battery</span>
+            </button>
           </div>
 
           <div className="bg-slate-50 rounded-2xl p-4 flex items-center justify-between border border-slate-100">
