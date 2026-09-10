@@ -68,8 +68,8 @@ export default function DashboardPage() {
   let isOnline = false;
   if (lastHb) {
     const hbTime = new Date(lastHb).getTime();
-    if (!isNaN(hbTime)) {
-      isOnline = (Date.now() - hbTime) < 3 * 60 * 1000; // Strictly 3 minutes (180,000 ms)
+    if (!isNaN(hbTime) && hbTime > 0) {
+      isOnline = (Date.now() - hbTime) < 3 * 60 * 1000; // Strictly 3 minutes (180,000ms)
     }
   }
 
