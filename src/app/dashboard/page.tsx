@@ -258,7 +258,6 @@ export default function DashboardPage() {
 
           <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
             <span>{lastHeartbeatStr ? `Updated: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'Just now'}</span>
-            <button onClick={handleLocate} className="text-blue-600 font-bold hover:underline">Refresh</button>
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -280,7 +279,7 @@ export default function DashboardPage() {
               <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isSearching ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-black shadow-sm group-hover:shadow-md'}`}>
                 <Search className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">Track location</span>
+              <span className="text-[11px] font-bold text-center text-slate-700">{isSearching ? 'Stop Search' : 'Search mode'}</span>
             </button>
 
             <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
@@ -290,11 +289,11 @@ export default function DashboardPage() {
               <span className="text-[11px] font-bold text-center text-slate-700">Erase data</span>
             </button>
 
-            <button className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group opacity-70 cursor-not-allowed">
+            <button onClick={handleLocate} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
               <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
-                <Battery className="w-5 h-5" />
+                <MapPin className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">Extend battery</span>
+              <span className="text-[11px] font-bold text-center text-slate-700">Locate</span>
             </button>
           </div>
 
