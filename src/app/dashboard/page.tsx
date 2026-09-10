@@ -26,10 +26,16 @@ export default function DashboardPage() {
 
   const fetchDevices = async () => {
     try {
-      const devices = await getDevices();
-      if (devices && devices.length > 0) {
-        setDevices(devices);
-        setDevice(devices[0]);
+      const fetchedDevices = await getDevices();
+      if (fetchedDevices && fetchedDevices.length > 0) {
+        setDevices(fetchedDevices);
+        setDevice((prevDevice: any) => {
+          if (prevDevice) {
+            const match = fetchedDevices.find((d: any) => d.id === prevDevice.id);
+            if (match) return match;
+          }
+          return fetchedDevices[0];
+        });
       }
     } catch (err) {
       console.error("Failed to fetch devices");
@@ -91,8 +97,8 @@ export default function DashboardPage() {
       await stopScreamDevice(device.id, passwordInput.trim());
       setShowPasswordModal(false);
       setPasswordInput('');
-      setDevice((p: any) => ({...p, is_screaming: false}));
-      setRtState((p: any) => p ? {...p, is_screaming: false} : null);
+      setDevice((prev: any) => prev ? { ...prev, is_screaming: false } : null);
+      setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_screaming: false }, is_screaming: false } : null);
       fetchDevices();
     } catch(e) { alert('Invalid Password'); }
     finally { setActionLoading(false); }
@@ -114,8 +120,8 @@ export default function DashboardPage() {
       await markFound(device.id, pinInput.trim());
       setShowPinModal(false);
       setPinInput('');
-      setDevice((p: any) => ({...p, is_stolen: false}));
-      setRtState((p: any) => p ? {...p, is_stolen: false} : null);
+      setDevice((prev: any) => prev ? { ...prev, is_stolen: false, is_screaming: false, is_searching: false } : null);
+      setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_stolen: false, is_screaming: false, is_searching: false }, is_stolen: false, is_screaming: false, is_searching: false } : null);
       fetchDevices();
     } catch(e) { alert('Invalid PIN Code'); }
     finally { setActionLoading(false); }
