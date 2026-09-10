@@ -20,6 +20,12 @@ export default function DashboardPage() {
   const [passwordInput, setPasswordInput] = useState('');
   const [pinInput, setPinInput] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 10000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     getMe().then((data) => setUser(data.data || data)).catch(() => logout());
