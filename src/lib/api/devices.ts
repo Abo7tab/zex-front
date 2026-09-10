@@ -9,3 +9,4 @@ export const startSearchMode = (id: number | string, interval_seconds: number = 
 export const stopSearchMode = (id: number | string) => api.post(`/devices/${id}/stop-search`).then(res => res.data);
 export const markStolen = (id: number | string) => api.post(`/devices/${id}/stolen`).then(res => res.data);
 export const markFound = (id: number | string, pin_code: string) => api.post(`/devices/${id}/found`, { pin_code }).then(res => res.data);
+export const deleteDevice = (id: number | string) => api.delete(`/devices/${id}`).then(res => res.data);

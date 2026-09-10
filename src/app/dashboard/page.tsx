@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
-import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound } from '@/lib/api/devices';
+import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
-import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff } from 'lucide-react';
+import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 
 export default function DashboardPage() {
@@ -15,6 +15,7 @@ export default function DashboardPage() {
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [pinInput, setPinInput] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
@@ -110,6 +111,19 @@ export default function DashboardPage() {
     finally { setActionLoading(false); }
   };
 
+  const handleDeleteDevice = async () => {
+    if (!device) return;
+    setActionLoading(true);
+    try {
+      await deleteDevice(device.id);
+      setShowDeleteModal(false);
+      const remaining = devices.filter((d: any) => d.id !== device.id);
+      setDevices(remaining);
+      setDevice(remaining.length > 0 ? remaining[0] : null);
+    } catch(e) { alert('Failed to delete device'); }
+    finally { setActionLoading(false); }
+  };
+
   const handleStolenToggle = async () => {
     if (!device) return;
     if (isStolen) {
@@ -165,30 +179,35 @@ export default function DashboardPage() {
             ) : (
               <>
                 <div className="flex justify-between items-start mb-6">
-                  <div>
-                    {devices.length > 1 ? (
-                      <select 
-                        className="bg-slate-800 text-white font-bold text-xl rounded-lg px-3 py-1 border border-slate-700 focus:outline-none focus:border-blue-500"
-                        value={device?.id}
-                        onChange={(e) => {
-                        const newId = parseInt(e.target.value);
-                        const selected = devices.find(d => d.id === newId);
-                        if (selected) {
-                          setRtState(null); // IMMEDIATELY CLEAR STALE RTDB STATE
-                          setDevice(selected);
-                        }
-                      }}
-                      >
-                        {devices.map(d => (
-                          <option key={d.id} value={d.id}>{d.device_name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-                        <span>{device.device_name}</span>
-                      </h2>
-                    )}
-                    <p className="text-slate-400 text-sm mt-1">{device.device_model} • Android {device.android_version}</p>
+                  <div className="flex items-start space-x-3">
+                    <div>
+                      {devices.length > 1 ? (
+                        <select 
+                          className="bg-slate-800 text-white font-bold text-xl rounded-lg px-3 py-1 border border-slate-700 focus:outline-none focus:border-blue-500"
+                          value={device?.id}
+                          onChange={(e) => {
+                          const newId = parseInt(e.target.value);
+                          const selected = devices.find((d: any) => d.id === newId);
+                          if (selected) {
+                            setRtState(null); // IMMEDIATELY CLEAR STALE RTDB STATE
+                            setDevice(selected);
+                          }
+                        }}
+                        >
+                          {devices.map((d: any) => (
+                            <option key={d.id} value={d.id}>{d.device_name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <h2 className="text-xl font-bold text-white flex items-center space-x-2">
+                          <span>{device.device_name}</span>
+                        </h2>
+                      )}
+                      <p className="text-slate-400 text-sm mt-1">{device.device_model} • Android {device.android_version}</p>
+                    </div>
+                    <button onClick={() => setShowDeleteModal(true)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg border border-red-500/30 transition-colors">
+                      <Trash className="w-5 h-5" />
+                    </button>
                   </div>
                   {isOnline ? (
                     <div className="flex items-center space-x-1 bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded-md text-xs font-bold border border-emerald-500/20">
@@ -299,6 +318,19 @@ export default function DashboardPage() {
             <div className="flex justify-end space-x-3">
               <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition">Cancel</button>
               <button onClick={handleStopScream} disabled={actionLoading} className="px-4 py-2 rounded-lg bg-orange-600 text-white font-bold hover:bg-orange-500 transition disabled:opacity-50">Silence</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+            <h3 className="text-xl font-bold text-red-500 mb-2">Delete Device?</h3>
+            <p className="text-slate-400 text-sm mb-4">This action is permanent and will remove all associated tracking data.</p>
+            <div className="flex justify-end space-x-3">
+              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-800 transition">Cancel</button>
+              <button onClick={handleDeleteDevice} disabled={actionLoading} className="px-4 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-500 transition disabled:opacity-50">Delete</button>
             </div>
           </div>
         </div>
