@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const [device, setDevice] = useState<any>(null);
   const [devices, setDevices] = useState<any[]>([]);
   const [rtState, setRtState] = useState<any>(null);
+  const [locationHistory, setLocationHistory] = useState<[number, number][]>([]);
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -73,6 +74,18 @@ export default function DashboardPage() {
       isOnline = (Date.now() - hbTime) < 3 * 60 * 1000; // Strictly 3 minutes (180,000ms)
     }
   }
+
+  useEffect(() => {
+    if (latitude != null && longitude != null) {
+      setLocationHistory(prev => {
+        const last = prev[prev.length - 1];
+        if (!last || last[0] !== latitude || last[1] !== longitude) {
+          return [...prev, [latitude, longitude]];
+        }
+        return prev;
+      });
+    }
+  }, [latitude, longitude]);
 
   const handleLocate = async () => {
     if (!device) return;
@@ -296,6 +309,7 @@ export default function DashboardPage() {
                  longitude={longitude} 
                  accuracy={accuracy} 
                  deviceName={device?.device_name || 'Device'} 
+                 locationHistory={locationHistory}
                />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500">

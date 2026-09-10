@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -29,9 +29,10 @@ interface MapProps {
   accuracy?: number;
   deviceName: string;
   lastSeen?: string;
+  locationHistory?: [number, number][];
 }
 
-export default function LeafletMap({ latitude, longitude, accuracy, deviceName, lastSeen }: MapProps) {
+export default function LeafletMap({ latitude, longitude, accuracy, deviceName, lastSeen, locationHistory }: MapProps) {
   return (
     <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: '100%', width: '100%', zIndex: 10 }}>
       <TileLayer
@@ -40,6 +41,10 @@ export default function LeafletMap({ latitude, longitude, accuracy, deviceName, 
       />
       <MapUpdater lat={latitude} lng={longitude} />
       
+      {locationHistory && locationHistory.length > 0 && (
+        <Polyline positions={locationHistory} pathOptions={{ color: '#3b82f6', weight: 4, dashArray: '5, 10' }} />
+      )}
+
       <Marker position={[latitude, longitude]} icon={customIcon}>
         <Popup>
           <strong>{deviceName}</strong><br />
