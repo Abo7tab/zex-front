@@ -64,8 +64,14 @@ export default function DashboardPage() {
   const longitude = locObj.longitude ?? device?.last_location?.longitude;
   const accuracy = locObj.accuracy ?? device?.last_location?.accuracy;
   
-  const lastHeartbeatAt = lastHeartbeatStr ? new Date(lastHeartbeatStr).getTime() : 0;
-  const isOnline = (Date.now() - lastHeartbeatAt) < 5 * 60 * 1000;
+  const lastHb = statusObj?.last_heartbeat_at || device?.last_heartbeat_at;
+  let isOnline = false;
+  if (lastHb) {
+    const hbTime = new Date(lastHb).getTime();
+    if (!isNaN(hbTime)) {
+      isOnline = (Date.now() - hbTime) < 3 * 60 * 1000; // Strictly 3 minutes (180,000 ms)
+    }
+  }
 
   const handleLocate = async () => {
     if (!device) return;
