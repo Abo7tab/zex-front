@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
-import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink } from 'lucide-react';
+import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 
 export default function DashboardPage() {
@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [pinInput, setPinInput] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -254,82 +255,120 @@ export default function DashboardPage() {
 
       {/* C. Floating Control Card Overlay */}
       {device && (
-        <div className="absolute bottom-0 md:bottom-auto md:top-6 left-0 md:left-auto right-0 md:right-6 z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl border-t md:border border-slate-200/80 flex flex-col">
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-slate-100 rounded-2xl">
-                <Smartphone className="w-6 h-6 text-black" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-black">{device.device_name}</h2>
-                <div className="flex items-center space-x-2 text-xs font-medium mt-1">
-                  {isOnline ? (
-                    <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> Online</span>
-                  ) : (
-                    <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> Offline</span>
-                  )}
-                  <span className="text-slate-300">•</span>
-                  <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
+        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:left-auto md:right-6 z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
+          {/* Drag Handle & Mobile Header */}
+          <div className="md:hidden w-full flex flex-col items-center justify-center cursor-pointer pb-2" onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}>
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-3"></div>
+            
+            {/* Shortened header for collapsed mode */}
+            <div className={`w-full flex justify-between items-center transition-opacity duration-200 ${isBottomSheetExpanded ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                  <Smartphone className="w-5 h-5 text-slate-700" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-800">{device.device_name}</h2>
+                  <div className="flex items-center space-x-2 text-[10px] font-medium mt-0.5">
+                    {isOnline ? (
+                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> Online</span>
+                    ) : (
+                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> Offline</span>
+                    )}
+                    <span className="text-slate-300">•</span>
+                    <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
+                  </div>
                 </div>
               </div>
+              <div className="p-2 text-slate-400 bg-slate-50 rounded-full">
+                <ChevronUp className="w-5 h-5" />
+              </div>
             </div>
-            {latitude != null && longitude != null && (
-              <a 
-                href={`https://maps.google.com/?q=${latitude},${longitude}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="p-2 text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors flex items-center justify-center"
-                title="Open in Google Maps"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            )}
           </div>
 
-          <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
-            <span>{lastHeartbeatStr ? `Updated: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'Just now'}</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button onClick={handleScreamToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isScreaming ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-black shadow-sm group-hover:shadow-md'}`}>
-                {isScreaming ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+          <div className={`flex flex-col transition-opacity duration-300 ${isBottomSheetExpanded ? 'opacity-100' : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'}`}>
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl hidden md:block">
+                  <Smartphone className="w-6 h-6 text-slate-700" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-800">{device.device_name}</h2>
+                  <div className="flex items-center space-x-2 text-xs font-medium mt-1">
+                    {isOnline ? (
+                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> Online</span>
+                    ) : (
+                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> Offline</span>
+                    )}
+                    <span className="text-slate-300">•</span>
+                    <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
+                  </div>
+                </div>
               </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">{isScreaming ? 'Silence' : 'Ring'}</span>
-            </button>
-            
-            <button onClick={handleStolenToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isStolen ? 'bg-red-500 text-white shadow-md' : 'bg-white text-black shadow-sm group-hover:shadow-md'}`}>
-                {isStolen ? <ShieldCheck className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
-              </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">{isStolen ? 'Found' : 'Lost mode'}</span>
-            </button>
-
-            <button onClick={handleLocate} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">Locate</span>
-            </button>
-            
-            <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
-                <Trash className="w-5 h-5" />
-              </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">Erase data</span>
-            </button>
-          </div>
-
-          <div 
-            onClick={toggleSearch} 
-            className="bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-2xl p-4 flex items-center justify-between border border-slate-100 transition-colors"
-          >
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-800">Live Tracking</span>
-              <span className="text-xs text-slate-500">{isSearching ? 'Active (High battery usage)' : 'Update location continuously'}</span>
+              {latitude != null && longitude != null && (
+                <a 
+                  href={`https://maps.google.com/?q=${latitude},${longitude}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-2 text-blue-600 bg-blue-50/80 hover:bg-blue-100 transition-colors flex items-center justify-center rounded-xl"
+                  title="Open in Google Maps"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
             </div>
-            <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isSearching ? 'bg-blue-600' : 'bg-slate-300'}`}>
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? 'translate-x-6' : 'translate-x-0'}`}></div>
+
+            <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
+              <span>{lastHeartbeatStr ? `Updated: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'Just now'}</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button onClick={handleScreamToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isScreaming ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md'}`}>
+                  {isScreaming ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                </div>
+                <span className="text-[11px] font-semibold text-center text-slate-700">{isScreaming ? 'Silence' : 'Ring'}</span>
+              </button>
+              
+              <button onClick={handleStolenToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isStolen ? 'bg-red-500 text-white shadow-sm' : 'bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md'}`}>
+                  {isStolen ? <ShieldCheck className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
+                </div>
+                <span className="text-[11px] font-semibold text-center text-slate-700">{isStolen ? 'Found' : 'Lost mode'}</span>
+              </button>
+
+              <button onClick={handleLocate} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-semibold text-center text-slate-700">Locate</span>
+              </button>
+              
+              <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md">
+                  <Trash className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-semibold text-center text-slate-700">Erase data</span>
+              </button>
+            </div>
+
+            <div 
+              onClick={toggleSearch} 
+              className="bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-2xl p-4 flex items-center justify-between border border-slate-200/60 transition-colors"
+            >
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-slate-800">Live Tracking</span>
+                <span className="text-xs text-slate-500">{isSearching ? 'Active (High battery usage)' : 'Update location continuously'}</span>
+              </div>
+              <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isSearching ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? 'translate-x-6' : 'translate-x-0'}`}></div>
+              </div>
+            </div>
+            
+            {/* Expanded mode Chevron Down for mobile */}
+            <div className="md:hidden w-full flex justify-center mt-4">
+               <button onClick={() => setIsBottomSheetExpanded(false)} className="p-2 text-slate-400 bg-slate-50 rounded-full">
+                 <ChevronDown className="w-5 h-5" />
+               </button>
             </div>
           </div>
         </div>
