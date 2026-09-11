@@ -171,13 +171,13 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-100 flex font-sans text-slate-900">
+    <div className="relative w-screen h-screen overflow-hidden bg-slate-100 flex font-sans text-slate-800">
       
       {/* Mobile Top Bar */}
       <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-black rounded-xl flex items-center justify-center font-black text-white">Z</div>
-          <span className="font-bold text-sm">ZEX Military</span>
+          <span className="font-semibold text-sm">ZEX Military</span>
         </div>
         <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
           {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -207,7 +207,7 @@ export default function DashboardPage() {
         <div>
           <div className="hidden md:flex items-center space-x-3 mb-8">
             <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-black text-xl text-white">Z</div>
-            <span className="text-xl font-bold tracking-tight text-black">ZEX Military Find Phone</span>
+            <span className="text-xl font-semibold tracking-tight text-slate-800">ZEX Military Find Phone</span>
           </div>
 
           <div className="mb-4">
@@ -226,7 +226,7 @@ export default function DashboardPage() {
                   <div className="flex items-center space-x-3">
                     <Smartphone className={`w-5 h-5 ${device?.id === d.id ? 'text-blue-500' : 'text-slate-400'}`} />
                     <div>
-                      <p className="font-bold text-sm text-slate-800">{d.device_name}</p>
+                      <p className="font-semibold text-sm text-slate-800">{d.device_name}</p>
                       <p className="text-xs text-slate-500">{d.device_model}</p>
                     </div>
                   </div>
@@ -243,7 +243,7 @@ export default function DashboardPage() {
             </div>
             <span className="text-sm font-medium text-slate-700">{user?.name || 'Loading...'}</span>
           </div>
-          <button onClick={logout} className="w-full flex items-center space-x-2 text-sm text-slate-600 hover:text-black transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
+          <button onClick={logout} className="w-full flex items-center space-x-2 text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
             <LogOut className="h-4 w-4" />
             <span className="font-semibold">Sign out</span>
           </button>
@@ -381,12 +381,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <VolumeX className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Silence Alarm</h3>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">Silence Alarm</h3>
             <p className="text-slate-500 text-sm mb-6">Enter your account password to silence the ringing.</p>
-            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-black mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Password" />
+            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Password" />
             <div className="flex space-x-3">
-              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
-              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">Silence</button>
+              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
+              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">Silence</button>
             </div>
           </div>
         </div>
@@ -398,12 +398,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Erase Device Data?</h3>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">Erase Device Data?</h3>
             <p className="text-slate-500 text-sm mb-6">Enter your account password to permanently erase this device.</p>
-            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-black mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Password" />
+            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Password" />
             <div className="flex space-x-3">
-              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
-              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">Erase</button>
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
+              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">Erase</button>
             </div>
           </div>
         </div>
@@ -415,12 +415,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Device Found</h3>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">Device Found</h3>
             <p className="text-slate-500 text-sm mb-6">Enter the recovery PIN code to unlock the device.</p>
-            <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,''))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-black text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
+            <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,''))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
             <div className="flex space-x-3">
-              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
-              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">Unlock</button>
+              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
+              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">Unlock</button>
             </div>
           </div>
         </div>
