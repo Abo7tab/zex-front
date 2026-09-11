@@ -207,7 +207,7 @@ export default function DashboardPage() {
         <div>
           <div className="hidden md:flex items-center space-x-3 mb-8">
             <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-xl text-white">Z</div>
-            <span className="text-xl font-semibold tracking-tight text-slate-800">ZEX Military Find Phone</span>
+            <span className="text-xl font-semibold tracking-tight text-slate-800">منظومة ZEX لتتبع وتأمين الهواتف</span>
           </div>
 
           <div className="mb-4">
@@ -245,7 +245,7 @@ export default function DashboardPage() {
           </div>
           <button onClick={logout} className="w-full flex items-center space-x-2 text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
             <LogOut className="h-4 w-4" />
-            <span className="font-semibold">Sign out</span>
+            <span className="font-semibold">????? ??????</span>
           </button>
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">
             <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">ZEX Military Security Framework</p>
@@ -340,14 +340,14 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md">
                   <MapPin className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">Locate</span>
+                <span className="text-[11px] font-semibold text-center text-slate-700">تحديد الموقع</span>
               </button>
               
               <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md">
                   <Trash className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">Erase data</span>
+                <span className="text-[11px] font-semibold text-center text-slate-700">مسح البيانات</span>
               </button>
             </div>
 
@@ -356,8 +356,8 @@ export default function DashboardPage() {
               className="bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-2xl p-4 flex items-center justify-between border border-slate-200/60 transition-colors"
             >
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-slate-800">Live Tracking</span>
-                <span className="text-xs text-slate-500">{isSearching ? 'Active (High battery usage)' : 'Update location continuously'}</span>
+                <span className="text-sm font-semibold text-slate-800">التتبع المباشر المستمر</span>
+                <span className="text-xs text-slate-500">{isSearching ? '??? (??????? ???? ????????)' : 'تحديث الموقع لحظة بلحظة'}</span>
               </div>
               <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isSearching ? 'bg-blue-600' : 'bg-slate-300'}`}>
                 <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? 'translate-x-6' : 'translate-x-0'}`}></div>
@@ -381,12 +381,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <VolumeX className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">Silence Alarm</h3>
-            <p className="text-slate-500 text-sm mb-6">Enter your account password to silence the ringing.</p>
-            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Password" />
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">إيقاف الرنين</h3>
+            <p className="text-slate-500 text-sm mb-6">???? ???? ?????? ?????? ?????? ?????? ??????.</p>
+            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="???? ??????" />
             <div className="flex space-x-3">
-              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
-              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">Silence</button>
+              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
+              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">إيقاف</button>
             </div>
           </div>
         </div>
@@ -398,12 +398,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">Erase Device Data?</h3>
-            <p className="text-slate-500 text-sm mb-6">Enter your account password to permanently erase this device.</p>
-            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Password" />
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">هل أنت متأكد من مسح كافة بيانات الجهاز؟</h3>
+            <p className="text-slate-500 text-sm mb-6">???? ???? ?????? ?????? ?????? ???? ???? ???????? ?? ?????? ???? ????.</p>
+            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="???? ??????" />
             <div className="flex space-x-3">
-              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
-              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">Erase</button>
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
+              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">مسح نهائي</button>
             </div>
           </div>
         </div>
@@ -415,12 +415,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">Device Found</h3>
-            <p className="text-slate-500 text-sm mb-6">Enter the recovery PIN code to unlock the device.</p>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">تم العثور على الجهاز</h3>
+            <p className="text-slate-500 text-sm mb-6">???? ??? ??? PIN ?????? ?? 6 ????? ?????? ??? ?????? ???? ??????.</p>
             <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,''))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
             <div className="flex space-x-3">
-              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
-              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">Unlock</button>
+              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
+              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">إلغاء وضع السرقة</button>
             </div>
           </div>
         </div>
