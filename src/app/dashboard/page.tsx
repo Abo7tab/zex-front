@@ -176,7 +176,7 @@ export default function DashboardPage() {
       {/* Mobile Top Bar */}
       <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-black rounded-xl flex items-center justify-center font-black text-white">Z</div>
+          <div className="w-8 h-8 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-white">Z</div>
           <span className="font-semibold text-sm">ZEX Military</span>
         </div>
         <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
@@ -206,7 +206,7 @@ export default function DashboardPage() {
       <div className={`fixed md:relative top-16 md:top-0 left-0 w-full md:w-80 h-[calc(100%-4rem)] md:h-full bg-white z-20 border-r border-slate-200 flex-col justify-between p-6 shadow-lg transition-transform ${showMobileMenu ? 'flex' : 'hidden md:flex'}`}>
         <div>
           <div className="hidden md:flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-black text-xl text-white">Z</div>
+            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-xl text-white">Z</div>
             <span className="text-xl font-semibold tracking-tight text-slate-800">ZEX Military Find Phone</span>
           </div>
 
