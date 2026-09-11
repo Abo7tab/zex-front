@@ -177,7 +177,7 @@ export default function DashboardPage() {
       <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-white">Z</div>
-          <span className="font-semibold text-sm">ZEX Military</span>
+          <span className="font-semibold text-sm">منظومة ZEX لتأمين الهواتف</span>
         </div>
         <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
           {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -197,7 +197,7 @@ export default function DashboardPage() {
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-200 text-slate-400">
             <MapPin className="w-12 h-12 mb-4 opacity-20" />
-            <p className="font-medium">No location data available yet</p>
+            <p className="font-medium">لا توجد بيانات موقع متاحة حتى الآن</p>
           </div>
         )}
       </div>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
               <User className="w-4 h-4 text-slate-500" />
             </div>
-            <span className="text-sm font-medium text-slate-700">{user?.name || 'Loading...'}</span>
+            <span className="text-sm font-medium text-slate-700">{user?.name || 'جارٍ التحميل...'}</span>
           </div>
           <button onClick={logout} className="w-full flex items-center space-x-2 text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
             <LogOut className="h-4 w-4" />
@@ -255,7 +255,7 @@ export default function DashboardPage() {
 
       {/* C. Floating Control Card Overlay */}
       {device && (
-        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:right-auto md:left-6 z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
+        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:right-auto md:left-[22rem] z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
           {/* Drag Handle & Mobile Header */}
           <div className="md:hidden w-full flex flex-col items-center justify-center cursor-pointer pb-2" onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}>
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-3"></div>
