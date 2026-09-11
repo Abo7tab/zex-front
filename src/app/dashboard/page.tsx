@@ -90,6 +90,16 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (device?.id && (rtState?.live_tracking || rtState?.stolen_mode)) {
+      interval = setInterval(() => {
+        locateDevice(device.id).catch(() => {});
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [device?.id, rtState?.live_tracking, rtState?.stolen_mode]);
+
+  useEffect(() => {
     if (latitude != null && longitude != null) {
       setLocationHistory(prev => {
         const last = prev[prev.length - 1];
@@ -209,13 +219,20 @@ export default function DashboardPage() {
       {/* A. Background Map Layer */}
       <div className="absolute inset-0 z-0">
         {latitude != null && longitude != null ? (
-           <DeviceMap 
-             latitude={latitude} 
-             longitude={longitude} 
-             accuracy={accuracy} 
-             deviceName={device?.device_name || 'Device'} 
-             locationHistory={locationHistory}
-           />
+           <>
+             <DeviceMap 
+               latitude={latitude} 
+               longitude={longitude} 
+               accuracy={accuracy} 
+               deviceName={device?.device_name || 'Device'} 
+               locationHistory={locationHistory}
+             />
+             {rtState?.provider === 'sms_relay' && (
+               <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm flex items-center space-x-2 space-x-reverse">
+                 <span>📍 تم التحديث عبر رسالة SMS</span>
+               </div>
+             )}
+           </>
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-slate-200 text-slate-400">
             <MapPin className="w-12 h-12 mb-4 opacity-20" />
