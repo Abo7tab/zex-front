@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
-import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2 } from 'lucide-react';
+import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 
 export default function DashboardPage() {
@@ -18,8 +18,10 @@ export default function DashboardPage() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
+  const [deletePasswordInput, setDeletePasswordInput] = useState('');
   const [pinInput, setPinInput] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -77,7 +79,7 @@ export default function DashboardPage() {
   if (lastHb) {
     const hbTime = new Date(lastHb).getTime();
     if (!isNaN(hbTime) && hbTime > 0) {
-      isOnline = (Date.now() - hbTime) < 3 * 60 * 1000; // Strictly 3 minutes (180,000ms)
+      isOnline = (Date.now() - hbTime) < 3 * 60 * 1000;
     }
   }
 
@@ -134,12 +136,13 @@ export default function DashboardPage() {
     if (!device) return;
     setActionLoading(true);
     try {
-      await deleteDevice(device.id);
+      await deleteDevice(device.id, deletePasswordInput.trim());
       setShowDeleteModal(false);
+      setDeletePasswordInput('');
       const remaining = devices.filter((d: any) => d.id !== device.id);
       setDevices(remaining);
       setDevice(remaining.length > 0 ? remaining[0] : null);
-    } catch(e) { alert('Failed to delete device'); }
+    } catch(e) { alert('Failed to delete device or Invalid Password'); }
     finally { setActionLoading(false); }
   };
 
@@ -169,6 +172,17 @@ export default function DashboardPage() {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-100 flex font-sans text-slate-900">
       
+      {/* Mobile Top Bar */}
+      <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 bg-black rounded-xl flex items-center justify-center font-black text-white">Z</div>
+          <span className="font-bold">ZEX Find</span>
+        </div>
+        <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
+          {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
       {/* A. Background Map Layer */}
       <div className="absolute inset-0 z-0">
         {latitude != null && longitude != null ? (
@@ -187,23 +201,24 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* B. Left Fixed Sidebar */}
-      <div className="w-80 h-full bg-white z-10 border-r border-slate-200 flex flex-col justify-between p-6 shadow-lg shadow-slate-200/50">
+      {/* B. Left Fixed Sidebar / Mobile Menu */}
+      <div className={`fixed md:relative top-16 md:top-0 left-0 w-full md:w-80 h-[calc(100%-4rem)] md:h-full bg-white z-20 border-r border-slate-200 flex-col justify-between p-6 shadow-lg transition-transform ${showMobileMenu ? 'flex' : 'hidden md:flex'}`}>
         <div>
-          <div className="flex items-center space-x-3 mb-8">
+          <div className="hidden md:flex items-center space-x-3 mb-8">
             <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-black text-xl text-white">Z</div>
             <span className="text-2xl font-bold tracking-tight text-black">ZEX Find</span>
           </div>
 
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">My devices ({devices.length})</h3>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
               {devices.map((d: any) => (
                 <div 
                   key={d.id} 
                   onClick={() => {
                     setRtState(null);
                     setDevice(d);
+                    setShowMobileMenu(false);
                   }}
                   className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${device?.id === d.id ? 'bg-slate-50 border-blue-500 shadow-sm' : 'bg-white border-transparent hover:bg-slate-50'}`}
                 >
@@ -214,11 +229,6 @@ export default function DashboardPage() {
                       <p className="text-xs text-slate-500">{d.device_model}</p>
                     </div>
                   </div>
-                  {device?.id === d.id && (
-                    <button onClick={(e) => { e.stopPropagation(); setShowDeleteModal(true); }} className="p-2 text-slate-400 hover:text-red-500 transition-colors rounded-full hover:bg-slate-200">
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
               ))}
             </div>
@@ -241,7 +251,7 @@ export default function DashboardPage() {
 
       {/* C. Floating Control Card Overlay */}
       {device && (
-        <div className="absolute top-6 right-6 z-10 w-[380px] bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl border border-slate-200/80 flex flex-col">
+        <div className="absolute bottom-0 md:bottom-auto md:top-6 left-0 md:left-auto right-0 md:right-6 z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-6 shadow-2xl border-t md:border border-slate-200/80 flex flex-col">
           <div className="flex justify-between items-start mb-6">
             <div className="flex items-center space-x-3">
               <div className="p-3 bg-slate-100 rounded-2xl">
@@ -260,6 +270,17 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+            {latitude != null && longitude != null && (
+              <a 
+                href={`https://maps.google.com/?q=${latitude},${longitude}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="p-2 text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors flex items-center justify-center"
+                title="Open in Google Maps"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
           </div>
 
           <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
@@ -288,18 +309,24 @@ export default function DashboardPage() {
               <span className="text-[11px] font-bold text-center text-slate-700">Locate</span>
             </button>
             
-            <button onClick={toggleSearch} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isSearching ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-black shadow-sm group-hover:shadow-md'}`}>
-                <Search className="w-5 h-5" />
+            <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
+                <Trash className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">{isSearching ? 'Stop Search' : 'Search mode'}</span>
+              <span className="text-[11px] font-bold text-center text-slate-700">Erase data</span>
             </button>
           </div>
 
-          <div className="bg-slate-50 rounded-2xl p-4 flex items-center justify-between border border-slate-100">
-            <span className="text-sm font-semibold text-slate-700">Notify me when it's found</span>
-            <div className={`w-10 h-6 rounded-full p-1 transition-colors ${isOnline ? 'bg-blue-600' : 'bg-slate-300'}`}>
-              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isOnline ? 'translate-x-4' : 'translate-x-0'}`}></div>
+          <div 
+            onClick={toggleSearch} 
+            className="bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-2xl p-4 flex items-center justify-between border border-slate-100 transition-colors"
+          >
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-800">Live Tracking</span>
+              <span className="text-xs text-slate-500">{isSearching ? 'Active (High battery usage)' : 'Update location continuously'}</span>
+            </div>
+            <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isSearching ? 'bg-blue-600' : 'bg-slate-300'}`}>
+              <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? 'translate-x-6' : 'translate-x-0'}`}></div>
             </div>
           </div>
         </div>
@@ -329,11 +356,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Delete Device?</h3>
-            <p className="text-slate-500 text-sm mb-6">This will permanently remove the device and all location history.</p>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Erase Device Data?</h3>
+            <p className="text-slate-500 text-sm mb-6">Enter your account password to permanently erase this device.</p>
+            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-black mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Password" />
             <div className="flex space-x-3">
               <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Cancel</button>
-              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">Delete</button>
+              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">Erase</button>
             </div>
           </div>
         </div>
