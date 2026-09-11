@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
-import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
+import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 
 export default function DashboardPage() {
@@ -74,6 +74,7 @@ export default function DashboardPage() {
   const latitude = locObj.latitude ?? device?.last_location?.latitude;
   const longitude = locObj.longitude ?? device?.last_location?.longitude;
   const accuracy = locObj.accuracy ?? device?.last_location?.accuracy;
+  const isBleMesh = locObj.provider === 'ble_mesh';
   
   const lastHb = statusObj?.last_heartbeat_at || device?.last_heartbeat_at;
   let isOnline = false;
@@ -320,6 +321,12 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
               <span>{lastHeartbeatStr ? `تحديث: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'الآن'}</span>
             </div>
+            {isBleMesh && (
+              <div className="flex items-center gap-2 mb-4 bg-indigo-50/80 text-indigo-700 px-3 py-2 rounded-xl border border-indigo-100">
+                <Bluetooth className="w-4 h-4" />
+                <span className="text-xs font-semibold tracking-wide">📍 تم التحديد عبر شبكة ZEX البلوتوث (BLE Mesh)</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mb-6">
               <button onClick={handleScreamToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
