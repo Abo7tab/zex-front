@@ -266,7 +266,7 @@ export default function DashboardPage() {
             <span>{lastHeartbeatStr ? `Updated: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'Just now'}</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <button onClick={handleScreamToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isScreaming ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-black shadow-sm group-hover:shadow-md'}`}>
                 {isScreaming ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -280,26 +280,19 @@ export default function DashboardPage() {
               </div>
               <span className="text-[11px] font-bold text-center text-slate-700">{isStolen ? 'Found' : 'Lost mode'}</span>
             </button>
-            
-            <button onClick={toggleSearch} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isSearching ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-black shadow-sm group-hover:shadow-md'}`}>
-                <Search className="w-5 h-5" />
-              </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">{isSearching ? 'Stop Search' : 'Search mode'}</span>
-            </button>
-
-            <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
-                <Trash className="w-5 h-5" />
-              </div>
-              <span className="text-[11px] font-bold text-center text-slate-700">Erase data</span>
-            </button>
 
             <button onClick={handleLocate} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
               <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-black shadow-sm group-hover:shadow-md">
                 <MapPin className="w-5 h-5" />
               </div>
               <span className="text-[11px] font-bold text-center text-slate-700">Locate</span>
+            </button>
+            
+            <button onClick={toggleSearch} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100 group">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isSearching ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-black shadow-sm group-hover:shadow-md'}`}>
+                <Search className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-bold text-center text-slate-700">{isSearching ? 'Stop Search' : 'Search mode'}</span>
             </button>
           </div>
 
