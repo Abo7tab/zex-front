@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showUnregisterModal, setShowUnregisterModal] = useState(false);
+  const [unregisterTarget, setUnregisterTarget] = useState<any>(null);
   const [passwordInput, setPasswordInput] = useState('');
   const [deletePasswordInput, setDeletePasswordInput] = useState('');
   const [pinInput, setPinInput] = useState('');
@@ -150,6 +152,23 @@ export default function DashboardPage() {
     finally { setActionLoading(false); }
   };
 
+  const handleUnregisterDevice = async () => {
+    if (!unregisterTarget) return;
+    setActionLoading(true);
+    try {
+      await deleteDevice(unregisterTarget.id, deletePasswordInput.trim());
+      setShowUnregisterModal(false);
+      setDeletePasswordInput('');
+      const remaining = devices.filter((d: any) => d.id !== unregisterTarget.id);
+      setDevices(remaining);
+      if (device?.id === unregisterTarget.id) {
+        setDevice(remaining.length > 0 ? remaining[0] : null);
+      }
+      setUnregisterTarget(null);
+    } catch(e) { alert('كلمة المرور غير صحيحة أو فشل الحذف'); }
+    setActionLoading(false);
+  };
+
   const handleStolenToggle = async () => {
     if (!device) return;
     if (isStolen) {
@@ -226,13 +245,24 @@ export default function DashboardPage() {
                   }}
                   className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${device?.id === d.id ? 'bg-slate-50 border-blue-500 shadow-sm' : 'bg-white border-transparent hover:bg-slate-50'}`}
                 >
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 space-x-reverse">
                     <Smartphone className={`w-5 h-5 ${device?.id === d.id ? 'text-blue-500' : 'text-slate-400'}`} />
                     <div>
                       <p className="font-semibold text-sm text-slate-800">{d.device_name}</p>
                       <p className="text-xs text-slate-500">{d.device_model}</p>
                     </div>
                   </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUnregisterTarget(d);
+                      setShowUnregisterModal(true);
+                    }}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                    title="حذف الجهاز من الحساب"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -435,6 +465,23 @@ export default function DashboardPage() {
             <div className="flex space-x-3">
               <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
               <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">إلغاء وضع السرقة</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUnregisterModal && (
+        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">حذف الجهاز من الحساب</h3>
+            <p className="text-slate-500 text-sm mb-6">سيتم إلغاء تسجيل هذا الجهاز من حسابك، ويمكنك إعادة إضافته لاحقاً. يرجى إدخال كلمة المرور للتأكيد.</p>
+            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
+            <div className="flex space-x-3">
+              <button onClick={() => {setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput('');}} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
+              <button onClick={handleUnregisterDevice} disabled={actionLoading || !deletePasswordInput} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">حذف الجهاز</button>
             </div>
           </div>
         </div>

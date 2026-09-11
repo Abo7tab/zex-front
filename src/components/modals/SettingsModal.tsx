@@ -43,12 +43,15 @@ export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }: {
     setMessage("");
     setError("");
     try {
-      await api.put("/auth/security", { 
-        current_password: currentPassword, 
-        password: newPassword, 
-        password_confirmation: confirmPassword,
-        pin_code: pinCode
-      });
+      const payload: any = { current_password: currentPassword };
+      if (newPassword) {
+        payload.password = newPassword;
+        payload.password_confirmation = confirmPassword;
+      }
+      if (pinCode) {
+        payload.pin_code = pinCode;
+      }
+      await api.put("/auth/security", payload);
       setMessage("تم تحديث الأمان بنجاح");
       setCurrentPassword("");
       setNewPassword("");
