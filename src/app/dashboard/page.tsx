@@ -211,7 +211,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mb-4">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">My devices ({devices.length})</h3>
+            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">أجهزتي ({devices.length})</h3>
             <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {devices.map((d: any) => (
                 <div 
@@ -245,17 +245,17 @@ export default function DashboardPage() {
           </div>
           <button onClick={logout} className="w-full flex items-center space-x-2 text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
             <LogOut className="h-4 w-4" />
-            <span className="font-semibold">????? ??????</span>
+            <span className="font-semibold">تسجيل الخروج</span>
           </button>
           <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">ZEX Military Security Framework</p>
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">إطار أمان ZEX</p>
           </div>
         </div>
       </div>
 
       {/* C. Floating Control Card Overlay */}
       {device && (
-        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:left-auto md:right-6 z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
+        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:right-auto md:left-6 z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
           {/* Drag Handle & Mobile Header */}
           <div className="md:hidden w-full flex flex-col items-center justify-center cursor-pointer pb-2" onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}>
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-3"></div>
@@ -270,9 +270,9 @@ export default function DashboardPage() {
                   <h2 className="text-base font-semibold text-slate-800">{device.device_name}</h2>
                   <div className="flex items-center space-x-2 text-[10px] font-medium mt-0.5">
                     {isOnline ? (
-                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> Online</span>
+                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> متصل</span>
                     ) : (
-                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> Offline</span>
+                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل</span>
                     )}
                     <span className="text-slate-300">•</span>
                     <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
@@ -295,9 +295,9 @@ export default function DashboardPage() {
                   <h2 className="text-lg font-semibold text-slate-800">{device.device_name}</h2>
                   <div className="flex items-center space-x-2 text-xs font-medium mt-1">
                     {isOnline ? (
-                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> Online</span>
+                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> متصل</span>
                     ) : (
-                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> Offline</span>
+                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل</span>
                     )}
                     <span className="text-slate-300">•</span>
                     <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="p-2 text-blue-600 bg-blue-50/80 hover:bg-blue-100 transition-colors flex items-center justify-center rounded-xl"
-                  title="Open in Google Maps"
+                  title="فتح في خرائط جوجل"
                 >
                   <ExternalLink className="w-4 h-4" />
                 </a>
@@ -318,7 +318,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
-              <span>{lastHeartbeatStr ? `Updated: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'Just now'}</span>
+              <span>{lastHeartbeatStr ? `تحديث: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'الآن'}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-6">
@@ -326,14 +326,14 @@ export default function DashboardPage() {
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isScreaming ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md'}`}>
                   {isScreaming ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
                 </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">{isScreaming ? 'Silence' : 'Ring'}</span>
+                <span className="text-[11px] font-semibold text-center text-slate-700">{isScreaming ? 'إيقاف' : 'تشغيل الرنين'}</span>
               </button>
               
               <button onClick={handleStolenToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isStolen ? 'bg-red-500 text-white shadow-sm' : 'bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md'}`}>
                   {isStolen ? <ShieldCheck className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
                 </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">{isStolen ? 'Found' : 'Lost mode'}</span>
+                <span className="text-[11px] font-semibold text-center text-slate-700">{isStolen ? 'تم العثور عليه' : 'وضع السرقة'}</span>
               </button>
 
               <button onClick={handleLocate} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
@@ -357,7 +357,7 @@ export default function DashboardPage() {
             >
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-slate-800">التتبع المباشر المستمر</span>
-                <span className="text-xs text-slate-500">{isSearching ? '??? (??????? ???? ????????)' : 'تحديث الموقع لحظة بلحظة'}</span>
+                <span className="text-xs text-slate-500">{isSearching ? 'نشط (استهلاك عالي للبطارية)' : 'تحديث الموقع لحظة بلحظة'}</span>
               </div>
               <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isSearching ? 'bg-blue-600' : 'bg-slate-300'}`}>
                 <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? 'translate-x-6' : 'translate-x-0'}`}></div>
@@ -382,8 +382,8 @@ export default function DashboardPage() {
               <VolumeX className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">إيقاف الرنين</h3>
-            <p className="text-slate-500 text-sm mb-6">???? ???? ?????? ?????? ?????? ?????? ??????.</p>
-            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="???? ??????" />
+            <p className="text-slate-500 text-sm mb-6">أدخل كلمة المرور لإيقاف الرنين.</p>
+            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
             <div className="flex space-x-3">
               <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
               <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">إيقاف</button>
@@ -399,8 +399,8 @@ export default function DashboardPage() {
               <Trash className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">هل أنت متأكد من مسح كافة بيانات الجهاز؟</h3>
-            <p className="text-slate-500 text-sm mb-6">???? ???? ?????? ?????? ?????? ???? ???? ???????? ?? ?????? ???? ????.</p>
-            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="???? ??????" />
+            <p className="text-slate-500 text-sm mb-6">أدخل كلمة المرور لمسح جميع البيانات من الجهاز بشكل دائم.</p>
+            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
             <div className="flex space-x-3">
               <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
               <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">مسح نهائي</button>
@@ -416,7 +416,7 @@ export default function DashboardPage() {
               <ShieldCheck className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">تم العثور على الجهاز</h3>
-            <p className="text-slate-500 text-sm mb-6">???? ??? ??? PIN ?????? ?? 6 ????? ?????? ??? ?????? ???? ??????.</p>
+            <p className="text-slate-500 text-sm mb-6">أدخل رمز الـ PIN المكون من 6 أرقام لإلغاء وضع السرقة وفتح الجهاز.</p>
             <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,''))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
             <div className="flex space-x-3">
               <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
