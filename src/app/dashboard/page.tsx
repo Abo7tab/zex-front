@@ -176,7 +176,7 @@ export default function DashboardPage() {
       <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-black rounded-xl flex items-center justify-center font-black text-white">Z</div>
-          <span className="font-bold">ZEX Find</span>
+          <span className="font-bold text-sm">ZEX Military</span>
         </div>
         <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
           {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -206,12 +206,12 @@ export default function DashboardPage() {
         <div>
           <div className="hidden md:flex items-center space-x-3 mb-8">
             <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center font-black text-xl text-white">Z</div>
-            <span className="text-2xl font-bold tracking-tight text-black">ZEX Find</span>
+            <span className="text-xl font-bold tracking-tight text-black">ZEX Military Find Phone</span>
           </div>
 
           <div className="mb-4">
             <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">My devices ({devices.length})</h3>
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {devices.map((d: any) => (
                 <div 
                   key={d.id} 
@@ -235,7 +235,7 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        <div className="space-y-3 pt-6 border-t border-slate-100">
+        <div className="space-y-3 pt-6 border-t border-slate-100 mt-auto">
           <div className="flex items-center space-x-3 px-3 py-2">
             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
               <User className="w-4 h-4 text-slate-500" />
@@ -246,6 +246,9 @@ export default function DashboardPage() {
             <LogOut className="h-4 w-4" />
             <span className="font-semibold">Sign out</span>
           </button>
+          <div className="mt-4 pt-4 border-t border-slate-100 text-center">
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">ZEX Military Security Framework</p>
+          </div>
         </div>
       </div>
 
