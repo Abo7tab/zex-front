@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
-import { subscribeToDeviceState } from '@/lib/firebase';
-import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth } from 'lucide-react';
+import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth, Settings } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
+import SettingsModal from '@/components/modals/SettingsModal';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -238,13 +239,18 @@ export default function DashboardPage() {
         </div>
         
         <div className="space-y-3 pt-6 border-t border-slate-100 mt-auto">
-          <div className="flex items-center space-x-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-              <User className="w-4 h-4 text-slate-500" />
+          <div className="flex items-center justify-between px-3 py-2">
+            <div className="flex items-center space-x-3 space-x-reverse">
+              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
+                <User className="w-4 h-4 text-slate-500" />
+              </div>
+              <span className="text-sm font-medium text-slate-700">{user?.name || 'جارٍ التحميل...'}</span>
             </div>
-            <span className="text-sm font-medium text-slate-700">{user?.name || 'جارٍ التحميل...'}</span>
+            <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors" title="الإعدادات">
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
-          <button onClick={logout} className="w-full flex items-center space-x-2 text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
+          <button onClick={logout} className="w-full flex items-center space-x-2 space-x-reverse text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
             <LogOut className="h-4 w-4" />
             <span className="font-semibold">تسجيل الخروج</span>
           </button>
@@ -256,7 +262,7 @@ export default function DashboardPage() {
 
       {/* C. Floating Control Card Overlay */}
       {device && (
-        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:right-auto md:left-[22rem] z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
+        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:left-auto md:right-[22rem] z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
           {/* Drag Handle & Mobile Header */}
           <div className="md:hidden w-full flex flex-col items-center justify-center cursor-pointer pb-2" onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}>
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-3"></div>
@@ -367,7 +373,7 @@ export default function DashboardPage() {
                 <span className="text-xs text-slate-500">{isSearching ? 'نشط (استهلاك عالي للبطارية)' : 'تحديث الموقع لحظة بلحظة'}</span>
               </div>
               <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isSearching ? 'bg-blue-600' : 'bg-slate-300'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? '-translate-x-6' : 'translate-x-0'}`}></div>
               </div>
             </div>
             
@@ -432,6 +438,13 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        user={user} 
+        onUserUpdate={(u) => setUser({ ...user, ...u })} 
+      />
     </div>
   );
 }
