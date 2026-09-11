@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
+import { subscribeToDeviceState } from '@/lib/firebase';
 import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth, Settings } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 import SettingsModal from '@/components/modals/SettingsModal';
@@ -56,7 +57,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (device?.device_uid) {
-      const unsub = subscribeToDeviceState(device.device_uid, (data) => {
+      const unsub = subscribeToDeviceState(device.device_uid, (data: any) => {
         setRtState(data);
       });
       return () => unsub();
@@ -443,7 +444,7 @@ export default function DashboardPage() {
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
         user={user} 
-        onUserUpdate={(u) => setUser({ ...user, ...u })} 
+        onUserUpdate={(u: any) => setUser({ ...user, ...u })} 
       />
     </div>
   );

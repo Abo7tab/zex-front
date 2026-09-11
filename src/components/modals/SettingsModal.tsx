@@ -1,8 +1,8 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
-import { api } from "@/lib/api/client";
+import api from "@/lib/axios";
 
-export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }) {
+export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }: { isOpen: boolean, onClose: () => void, user: any, onUserUpdate: (u: any) => void }) {
   const [tab, setTab] = useState("profile");
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
@@ -18,7 +18,7 @@ export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }) {
 
   if (!isOpen) return null;
 
-  const handleProfileSubmit = async (e) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
@@ -27,14 +27,14 @@ export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }) {
       const res = await api.put("/auth/profile", { name, email });
       setMessage("تم تحديث الملف الشخصي بنجاح");
       if (onUserUpdate) onUserUpdate(res.data.owner);
-    } catch (err) {
+    } catch (err: any) {
       setError(err.response?.data?.message || "حدث خطأ أثناء التحديث");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSecuritySubmit = async (e) => {
+  const handleSecuritySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword && newPassword !== confirmPassword) {
       return setError("كلمة المرور غير متطابقة");
@@ -54,7 +54,7 @@ export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }) {
       setNewPassword("");
       setConfirmPassword("");
       setPinCode("");
-    } catch (err) {
+    } catch (err: any) {
       setError(err.response?.data?.message || "حدث خطأ أثناء التحديث");
     } finally {
       setLoading(false);
