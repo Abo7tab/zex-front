@@ -350,9 +350,13 @@ export default function DashboardPage() {
           <div className={`flex flex-col transition-opacity duration-300 ${isBottomSheetExpanded ? 'opacity-100' : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'}`}>
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl hidden md:block">
-                  <Smartphone className="w-6 h-6 text-slate-700" />
-                </div>
+                <button 
+                    onClick={() => setShowControlCard(false)}
+                    className="p-3 bg-slate-50 border border-slate-100 rounded-2xl hidden md:flex items-center justify-center hover:bg-red-50 hover:border-red-100 transition-colors cursor-pointer group"
+                    title="إخفاء لوحة التحكم"
+                  >
+                    <Smartphone className="w-6 h-6 text-slate-700 group-hover:text-red-500 transition-colors" />
+                  </button>
                 <div>
                   <h2 className="text-lg font-semibold text-slate-800">{device.device_name}</h2>
                   <div className="flex items-center space-x-2 text-xs font-medium mt-1">
@@ -378,9 +382,6 @@ export default function DashboardPage() {
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   )}
-                  <button onClick={() => setShowControlCard(false)} className="hidden md:flex p-2 text-slate-400 bg-slate-50 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors" title="إخفاء لوحة التحكم">
-                    <X className="w-5 h-5" />
-                  </button>
                 </div>
             </div>
 
