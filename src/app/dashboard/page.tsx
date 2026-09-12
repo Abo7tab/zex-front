@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showControlCard, setShowControlCard] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   
   const [tick, setTick] = useState(0);
   useEffect(() => {
