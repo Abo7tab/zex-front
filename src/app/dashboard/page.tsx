@@ -318,9 +318,6 @@ export default function DashboardPage() {
       )}
       {device && showControlCard && (
         <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:left-auto md:right-[22rem] z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
-          <button onClick={() => setShowControlCard(false)} className="hidden md:flex absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-20" title="إخفاء لوحة التحكم">
-            <X className="w-5 h-5" />
-          </button>
           {/* Drag Handle & Mobile Header */}
           <div className="md:hidden w-full flex flex-col items-center justify-center cursor-pointer pb-2" onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}>
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-3"></div>
@@ -369,17 +366,22 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-              {latitude != null && longitude != null && (
-                <a 
-                  href={`https://maps.google.com/?q=${latitude},${longitude}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="p-2 text-blue-600 bg-blue-50/80 hover:bg-blue-100 transition-colors flex items-center justify-center rounded-xl"
-                  title="فتح في خرائط جوجل"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
+              <div className="flex items-center space-x-2 space-x-reverse">
+                  {latitude != null && longitude != null && (
+                    <a 
+                      href={`https://maps.google.com/?q=${latitude},${longitude}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-2 text-blue-600 bg-blue-50/80 hover:bg-blue-100 transition-colors flex items-center justify-center rounded-xl"
+                      title="فتح في خرائط جوجل"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
+                  <button onClick={() => setShowControlCard(false)} className="hidden md:flex p-2 text-slate-400 bg-slate-50 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors" title="إخفاء لوحة التحكم">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
             </div>
 
             <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
