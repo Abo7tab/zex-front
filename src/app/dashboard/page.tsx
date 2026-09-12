@@ -209,7 +209,7 @@ export default function DashboardPage() {
       <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-white">Z</div>
-          <span className="font-semibold text-sm">منظومة ZEX لتأمين الهواتف</span>
+          <span className="font-semibold text-sm">ZEX Military</span>
         </div>
         <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
           {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -246,7 +246,7 @@ export default function DashboardPage() {
         <div>
           <div className="hidden md:flex items-center space-x-3 mb-8">
             <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-xl text-white">Z</div>
-            <span className="text-xl font-semibold tracking-tight text-slate-800">منظومة ZEX لتتبع وتأمين الهواتف</span>
+            <span className="text-xl font-semibold tracking-tight text-slate-800">ZEX Military</span>
           </div>
 
           <div className="mb-4">
