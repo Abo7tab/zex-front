@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
-import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth, Settings } from 'lucide-react';
+import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth, Settings, Eye, EyeOff, Sliders } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 import SettingsModal from '@/components/modals/SettingsModal';
 
@@ -27,6 +27,7 @@ export default function DashboardPage() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showControlCard, setShowControlCard] = useState(true);
   
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -257,7 +258,7 @@ export default function DashboardPage() {
                   key={d.id} 
                   onClick={() => {
                     setRtState(null);
-                    setDevice(d);
+                    setDevice(d); setShowControlCard(true);
                     setShowMobileMenu(false);
                   }}
                   className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${device?.id === d.id ? 'bg-slate-50 border-blue-500 shadow-sm' : 'bg-white border-transparent hover:bg-slate-50'}`}
