@@ -85,7 +85,7 @@ export default function DashboardPage() {
   if (lastHb) {
     const hbTime = new Date(lastHb).getTime();
     if (!isNaN(hbTime) && hbTime > 0) {
-      isOnline = (Date.now() - hbTime) < 3 * 60 * 1000;
+      isOnline = (Date.now() - hbTime) < 2 * 60 * 1000;
     }
   }
 
