@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
@@ -327,7 +327,7 @@ export default function DashboardPage() {
                     {isOnline ? (
                       <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> متصل</span>
                     ) : (
-                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل</span>
+                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل (بانتظار استجابة)</span>
                     )}
                     <span className="text-slate-300">•</span>
                     <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                     {isOnline ? (
                       <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> متصل</span>
                     ) : (
-                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل</span>
+                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل (بانتظار استجابة)</span>
                     )}
                     <span className="text-slate-300">•</span>
                     <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
