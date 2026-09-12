@@ -276,7 +276,7 @@ export default function DashboardPage() {
                       setShowUnregisterModal(true);
                     }}
                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                    title="حذف الجهاز من الحساب"
+                    title="حذف الجهاز من الحساب (إلغاء الربط)"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -408,7 +408,7 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md">
                   <Trash className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">مسح البيانات</span>
+                <span className="text-[11px] font-semibold text-center text-slate-700">مسح بيانات الهاتف عن بُعد (فرمتة الشاملة)</span>
               </button>
             </div>
 
