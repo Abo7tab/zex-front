@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 import api from "@/lib/axios";
 
 export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }: { isOpen: boolean, onClose: () => void, user: any, onUserUpdate: (u: any) => void }) {
@@ -11,6 +11,7 @@ export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }: {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [pinCode, setPinCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -102,15 +103,30 @@ export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }: {
             <form onSubmit={handleSecuritySubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">كلمة المرور الحالية (مطلوبة)</label>
-                <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full p-2 border border-slate-200 rounded-xl text-sm" />
+                <div className="relative">
+  <input type={showPassword ? "text" : "password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full p-2 pl-10 border border-slate-200 rounded-xl text-sm" />
+  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+  </button>
+</div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">كلمة المرور الجديدة</label>
-                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="w-full p-2 border border-slate-200 rounded-xl text-sm" />
+                <div className="relative">
+  <input type={showPassword ? "text" : "password"} value={newPassword} onChange={e => setNewPassword(e.target.value)} required className="w-full p-2 pl-10 border border-slate-200 rounded-xl text-sm" />
+  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+  </button>
+</div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">تأكيد كلمة المرور الجديدة</label>
-                <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full p-2 border border-slate-200 rounded-xl text-sm" />
+                <div className="relative">
+  <input type={showPassword ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required className="w-full p-2 pl-10 border border-slate-200 rounded-xl text-sm" />
+  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+  </button>
+</div>
               </div>
               <button type="submit" disabled={loading} className="w-full py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 disabled:opacity-50">
                 {loading ? "جاري التحديث..." : "تحديث كلمة المرور"}
@@ -122,7 +138,12 @@ export default function SettingsModal({ isOpen, onClose, user, onUserUpdate }: {
             <form onSubmit={handleSecuritySubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">كلمة المرور الحالية (مطلوبة للتحقق)</label>
-                <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full p-2 border border-slate-200 rounded-xl text-sm" />
+                <div className="relative">
+  <input type={showPassword ? "text" : "password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full p-2 pl-10 border border-slate-200 rounded-xl text-sm" />
+  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+  </button>
+</div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">رمز PIN الجديد (6 أرقام)</label>

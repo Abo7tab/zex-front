@@ -444,7 +444,12 @@ export default function DashboardPage() {
             </div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">إيقاف الرنين</h3>
             <p className="text-slate-500 text-sm mb-6">أدخل كلمة المرور لإيقاف الرنين.</p>
-            <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
+            <div className="relative mb-6">
+              <input type={showPassword ? "text" : "password"} value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             <div className="flex space-x-3">
               <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
               <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">إيقاف</button>
@@ -461,7 +466,12 @@ export default function DashboardPage() {
             </div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">هل أنت متأكد من مسح كافة بيانات الجهاز؟</h3>
             <p className="text-slate-500 text-sm mb-6">أدخل كلمة المرور لمسح جميع البيانات من الجهاز بشكل دائم.</p>
-            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
+            <div className="relative mb-6">
+              <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             <div className="flex space-x-3">
               <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
               <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">مسح نهائي</button>
@@ -495,7 +505,12 @@ export default function DashboardPage() {
             </div>
             <h3 className="text-xl font-semibold text-slate-800 mb-2">حذف الجهاز من الحساب</h3>
             <p className="text-slate-500 text-sm mb-6">سيتم إلغاء تسجيل هذا الجهاز من حسابك، ويمكنك إعادة إضافته لاحقاً. يرجى إدخال كلمة المرور للتأكيد.</p>
-            <input type="password" value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
+            <div className="relative mb-6">
+              <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             <div className="flex space-x-3">
               <button onClick={() => {setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput('');}} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
               <button onClick={handleUnregisterDevice} disabled={actionLoading || !deletePasswordInput} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">حذف الجهاز</button>
