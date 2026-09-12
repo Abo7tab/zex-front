@@ -13,8 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZEX Military Find Phone",
+  title: "ZEX Military",
   description: "ZEX Military Security Framework for device tracking and anti-theft.",
+  verification: {
+    google: "IhX2U9bzob2dTAvxoqXQtyq6tqe9uD2o649TpL4oOKs",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
