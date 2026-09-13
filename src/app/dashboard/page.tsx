@@ -8,8 +8,8 @@ import { useTerminalStore } from '@/store/useTerminalStore';
 import { 
   Shield, User, Smartphone, Search, AlertTriangle, ShieldCheck, 
   Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings, 
-  Eye, EyeOff, LogOut, Radar, MapPin, Crosshair, Key, Gauge,
-  Network, Lock, Bluetooth, BluetoothSearching, CheckCircle,
+  Eye, EyeOff, LogOut, Radar, MapPin, Crosshair,
+  Bluetooth, BluetoothSearching, CheckCircle,
   Terminal, ShieldAlert
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const [devices, setDevices] = useState<any[]>([]);
   const [rtState, setRtState] = useState<any>(null);
   const [locationHistory, setLocationHistory] = useState<[number, number][]>([]);
-  
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -47,54 +47,22 @@ export default function DashboardPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const logs = useTerminalStore((state) => state.logs.slice(-50)); // Limit logs to prevent memory issues
+
+  const logs = useTerminalStore((state) => state.logs.slice(-50));
   const router = useRouter();
-  const [tick, setTick] = useState(0);
+
+  // ── ALL HOOKS MUST COME BEFORE ANY CONDITIONAL RETURN ──
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    const timer = setInterval(() => setTick(t => t + 1), 10000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const fetchDevices = async () => {
-    try {
-      const fetchedDevices = await getDevices();
-      if (fetchedDevices && fetchedDevices.length > 0) {
-        setDevices(fetchedDevices);
-        setDevice((prevDevice: any) => {
-          if (prevDevice) {
-            const match = fetchedDevices.find((d: any) => d.id === prevDevice.id);
-            if (match) return match;
-          }
-          return fetchedDevices[0];
-        });
-      } else {
-        setDevices([]);
-        setDevice(null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch devices");
-      setDevices([]);
-      setDevice(null);
-    }
-  };
-
-  const handleLocate = useCallback(async () => {
-    if (!device) return;
-    try { await locateDevice(device.id); } catch(e) { alert('فشل تحديد الموقع'); }
-  }, [device?.id]);
-
-  useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const token = localStorage.getItem('zex_token') || localStorage.getItem('zex_auth_token');
     const hasCookie = document.cookie.includes('zex_token=');
-    
+
     if (!token && !hasCookie) {
       router.replace('/login');
       return;
@@ -103,7 +71,7 @@ export default function DashboardPage() {
     getMe()
       .then((data) => {
         setUser(data?.data || data);
-        fetchDevices();
+        fetchDevicesInner();
       })
       .catch(() => {
         localStorage.removeItem('zex_token');
@@ -114,154 +82,155 @@ export default function DashboardPage() {
         setIsLoading(false);
       });
 
-    const safetyTimer = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
-
+    const safetyTimer = setTimeout(() => setIsLoading(false), 3000);
     return () => clearTimeout(safetyTimer);
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
-  const uid = device?.device_uid;
-  if (!uid || typeof window === 'undefined') return;
+    const uid = device?.device_uid;
+    if (!uid || typeof window === 'undefined') return;
 
-  let unsub = null;
-  try {
-    unsub = subscribeToDeviceState(uid, (data) => {
-      if (data) {
-        setRtState(data);
-      }
-    });
-  } catch (e) {
-    console.warn("Firebase sub error", e);
-  }
+    let unsub: (() => void) | null = null;
+    try {
+      unsub = subscribeToDeviceState(uid, (data: any) => {
+        if (data) setRtState(data);
+      });
+    } catch (e) {
+      console.warn('Firebase sub error', e);
+    }
 
-  return () => {
-    if (typeof unsub === 'function') unsub();
-  };
-}, [device?.device_uid]);
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, [device?.device_uid]);
 
+  // Derive coordinates BEFORE the locationHistory effect
   const statusObj = rtState?.status || rtState || {};
   const locObj = rtState?.last_location || rtState?.location || device?.last_location || {};
 
-  const isScreaming = statusObj.is_screaming ?? device?.is_screaming;
-  const isStolen = statusObj.is_stolen ?? device?.is_stolen;
-  const isSearching = statusObj.is_searching ?? device?.is_searching;
-  const batteryLevel = statusObj.battery_level ?? device?.battery_level ?? 0;
+  const rawLat = locObj.latitude ?? device?.last_location?.latitude;
+  const rawLng = locObj.longitude ?? device?.last_location?.longitude;
+  const rawAcc = locObj.accuracy ?? device?.last_location?.accuracy;
+  const latitude: number  = rawLat ? Number(rawLat) : 24.7136;
+  const longitude: number = rawLng ? Number(rawLng) : 46.6753;
+  const accuracy: number  = rawAcc ? Number(rawAcc) : 0;
 
-  const latitude = locObj.latitude ?? device?.last_location?.latitude ?? 24.7136;
-  const longitude = locObj.longitude ?? device?.last_location?.longitude ?? 46.6753;
-  const accuracy = locObj.accuracy ?? device?.last_location?.accuracy;
-  
-  const lastHb = statusObj?.last_heartbeat_at || device?.last_heartbeat_at;
-  let isOnline = false;
-  if (lastHb) {
-    const hbTime = new Date(lastHb).getTime();
-    if (!isNaN(hbTime) && hbTime > 0) {
-      isOnline = (Date.now() - hbTime) < 2 * 60 * 1000;
-    }
-  }
-
-  
-
-    useEffect(() => {
-    if (latitude == null || longitude == null) return;
-    
+  // MUST be after latitude/longitude derivation, but still before any return
+  useEffect(() => {
     setLocationHistory(prev => {
       const last = prev[prev.length - 1];
-      if (last && last[0] === latitude && last[1] === longitude) {
-        return prev; // Return SAME array reference if unchanged
-      }
+      if (last && last[0] === latitude && last[1] === longitude) return prev;
       const updated: [number, number][] = [...prev, [latitude, longitude] as [number, number]];
       return updated.length > 50 ? updated.slice(-50) : updated;
     });
   }, [latitude, longitude]);
 
-  if (!mounted || isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono dir-rtl" dir="rtl">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <span className="text-sm font-bold text-slate-200">جاري تهيئة غرفة العمليات التكتيكية C4ISR...</span>
-        <span className="text-xs text-slate-500 mt-1">Securing connection to ZEX Node...</span>
-      </div>
-    );
+  // ── DERIVED STATE (after hooks, before handlers) ──
+  const isScreaming = statusObj.is_screaming ?? device?.is_screaming;
+  const isStolen    = statusObj.is_stolen    ?? device?.is_stolen;
+  const isSearching = statusObj.is_searching ?? device?.is_searching;
+  const batteryLevel = Number(statusObj.battery_level ?? device?.battery_level ?? 0);
+
+  const lastHb = statusObj?.last_heartbeat_at || device?.last_heartbeat_at;
+  let isOnline = false;
+  if (lastHb) {
+    const hbTime = new Date(lastHb).getTime();
+    if (!isNaN(hbTime) && hbTime > 0) isOnline = (Date.now() - hbTime) < 2 * 60 * 1000;
   }
 
-  // Command Matrix Action Handlers
+  const filteredDevices = (devices || []).filter((d) => {
+    if (!searchQuery) return true;
+    const q = String(searchQuery || '').toLowerCase();
+    const name  = String(d?.name || d?.device_uid || d?.model || '').toLowerCase();
+    const model = String(d?.model || d?.device_type || '').toLowerCase();
+    return name.includes(q) || model.includes(q);
+  });
+
+  // ── HANDLERS ──
+  async function fetchDevicesInner() {
+    try {
+      const fetched = await getDevices();
+      if (fetched && fetched.length > 0) {
+        setDevices(fetched);
+        setDevice((prev: any) => {
+          if (prev) { const m = fetched.find((d: any) => d.id === prev.id); if (m) return m; }
+          return fetched[0];
+        });
+      } else {
+        setDevices([]); setDevice(null);
+      }
+    } catch { setDevices([]); setDevice(null); }
+  }
+
+  const fetchDevices = () => fetchDevicesInner();
+
+  const handleLocate = useCallback(async () => {
+    if (!device) return;
+    try { await locateDevice(device.id); } catch { alert('فشل تحديد الموقع'); }
+  }, [device?.id]);
+
   const handleStartScream = async () => {
     if (!device) return;
-    try { await screamDevice(device.id); setDevice((p: any) => ({...p, is_screaming: true})); setRtState((p: any) => p ? {...p, is_screaming: true} : null); fetchDevices(); } catch(e) { alert('فشل التشغيل'); }
+    try { await screamDevice(device.id); setDevice((p: any) => ({...p, is_screaming: true})); setRtState((p: any) => p ? {...p, is_screaming: true} : null); fetchDevices(); } catch { alert('فشل التشغيل'); }
   };
 
-  const handleStopScreamClick = () => {
-    if (!device) return;
-    setShowPasswordModal(true);
-  };
+  const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
 
   const handleStopScream = async () => {
     if (!device) return;
     setActionLoading(true);
     try {
       await stopScreamDevice(device.id, passwordInput.trim());
-      setShowPasswordModal(false);
-      setPasswordInput('');
-      setDevice((prev: any) => prev ? { ...prev, is_screaming: false } : null);
-      setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_screaming: false }, is_screaming: false } : null);
+      setShowPasswordModal(false); setPasswordInput('');
+      setDevice((p: any) => p ? {...p, is_screaming: false} : null);
+      setRtState((p: any) => p ? {...p, status: {...p?.status, is_screaming: false}, is_screaming: false} : null);
       fetchDevices();
-    } catch(e) { alert('كلمة المرور غير صحيحة'); }
+    } catch { alert('كلمة المرور غير صحيحة'); }
     finally { setActionLoading(false); }
   };
 
   const handleStartSearch = async () => {
     if (!device) return;
-    try { await startSearchMode(device.id, 30); setDevice((p: any) => ({...p, is_searching: true})); setRtState((p: any) => p ? {...p, is_searching: true} : null); fetchDevices(); } catch(e) { alert('فشل بدء البحث'); }
+    try { await startSearchMode(device.id, 30); setDevice((p: any) => ({...p, is_searching: true})); setRtState((p: any) => p ? {...p, is_searching: true} : null); fetchDevices(); } catch { alert('فشل بدء البحث'); }
   };
 
   const handleStopSearch = async () => {
     if (!device) return;
-    try { await stopSearchMode(device.id); setDevice((p: any) => ({...p, is_searching: false})); setRtState((p: any) => p ? {...p, is_searching: false} : null); fetchDevices(); } catch(e) { alert('فشل إيقاف البحث'); }
+    try { await stopSearchMode(device.id); setDevice((p: any) => ({...p, is_searching: false})); setRtState((p: any) => p ? {...p, is_searching: false} : null); fetchDevices(); } catch { alert('فشل إيقاف البحث'); }
   };
 
   const handleStartStolen = async () => {
     if (!device) return;
-    try { await markStolen(device.id); setDevice((p: any) => ({...p, is_stolen: true})); setRtState((p: any) => p ? {...p, is_stolen: true} : null); fetchDevices(); } catch(e) { alert('فشل تفعيل وضع السرقة'); }
+    try { await markStolen(device.id); setDevice((p: any) => ({...p, is_stolen: true})); setRtState((p: any) => p ? {...p, is_stolen: true} : null); fetchDevices(); } catch { alert('فشل تفعيل وضع السرقة'); }
   };
 
-  const handleStopStolenClick = () => {
-    if (!device) return;
-    setShowPinModal(true);
-  };
+  const handleStopStolenClick = () => { if (!device) return; setShowPinModal(true); };
 
   const handleMarkFound = async () => {
     if (!device) return;
     setActionLoading(true);
     try {
       await markFound(device.id, pinInput.trim());
-      setShowPinModal(false);
-      setPinInput('');
-      setDevice((prev: any) => prev ? { ...prev, is_stolen: false, is_screaming: false, is_searching: false } : null);
-      setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_stolen: false, is_screaming: false, is_searching: false }, is_stolen: false, is_screaming: false, is_searching: false } : null);
+      setShowPinModal(false); setPinInput('');
+      setDevice((p: any) => p ? {...p, is_stolen: false, is_screaming: false, is_searching: false} : null);
+      setRtState((p: any) => p ? {...p, status: {...p?.status, is_stolen: false, is_screaming: false, is_searching: false}, is_stolen: false, is_screaming: false, is_searching: false} : null);
       fetchDevices();
-    } catch(e) { alert('رمز PIN غير صحيح'); }
+    } catch { alert('رمز PIN غير صحيح'); }
     finally { setActionLoading(false); }
   };
 
-  const handleDeleteClick = () => {
-    if (!device) return;
-    setShowDeleteModal(true);
-  };
+  const handleDeleteClick = () => { if (!device) return; setShowDeleteModal(true); };
 
   const handleDeleteDevice = async () => {
     if (!device) return;
     setActionLoading(true);
     try {
       await deleteDevice(device.id, deletePasswordInput.trim());
-      setShowDeleteModal(false);
-      setDeletePasswordInput('');
+      setShowDeleteModal(false); setDeletePasswordInput('');
       const remaining = devices.filter((d: any) => d.id !== device.id);
-      setDevices(remaining);
-      setDevice(remaining.length > 0 ? remaining[0] : null);
-    } catch(e) { alert('فشل المسح أو كلمة المرور غير صحيحة'); }
+      setDevices(remaining); setDevice(remaining.length > 0 ? remaining[0] : null);
+    } catch { alert('فشل المسح أو كلمة المرور غير صحيحة'); }
     finally { setActionLoading(false); }
   };
 
@@ -270,30 +239,32 @@ export default function DashboardPage() {
     setActionLoading(true);
     try {
       await deleteDevice(unregisterTarget.id, deletePasswordInput.trim());
-      setShowUnregisterModal(false);
-      setDeletePasswordInput('');
+      setShowUnregisterModal(false); setDeletePasswordInput('');
       const remaining = devices.filter((d: any) => d.id !== unregisterTarget.id);
       setDevices(remaining);
-      if (device?.id === unregisterTarget.id) {
-        setDevice(remaining.length > 0 ? remaining[0] : null);
-      }
+      if (device?.id === unregisterTarget.id) setDevice(remaining.length > 0 ? remaining[0] : null);
       setUnregisterTarget(null);
-    } catch(e) { alert('كلمة المرور غير صحيحة أو فشل الحذف'); }
-    setActionLoading(false);
+    } catch { alert('كلمة المرور غير صحيحة أو فشل الحذف'); }
+    finally { setActionLoading(false); }
   };
 
-  const filteredDevices = (devices || []).filter((d) => {
-    if (!searchQuery) return true;
-    const q = String(searchQuery || '').toLowerCase();
-    const name = String(d?.name || d?.device_uid || d?.model || '').toLowerCase();
-    const model = String(d?.model || d?.device_type || '').toLowerCase();
-    return name.includes(q) || model.includes(q);
-  });
+  // ── CONDITIONAL RENDER (after ALL hooks) ──
+  if (!mounted || isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono" dir="rtl">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <span className="text-sm font-bold text-slate-200">جاري تهيئة غرفة العمليات التكتيكية C4ISR...</span>
+        <span className="text-xs text-slate-500 mt-1">Securing connection to ZEX Node...</span>
+      </div>
+    );
+  }
 
+  // ── JSX ──
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex selection:bg-blue-600 selection:text-white font-sans overflow-hidden" dir="rtl">
       <div className="fixed inset-0 pointer-events-none opacity-[0.035] bg-[radial-gradient(#1e3a8a_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
+      {/* Sidebar */}
       <aside className="w-80 bg-white border-l border-slate-200/80 shadow-md hidden lg:flex flex-col z-20 h-screen relative shrink-0">
         <div className="p-5 border-b border-slate-100 flex flex-col gap-4">
           <div className="flex flex-row items-center gap-3">
@@ -327,19 +298,19 @@ export default function DashboardPage() {
 
           <div className="relative shrink-0">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-            <input 
-              type="text" 
-              placeholder="البحث عن عقدة..." 
+            <input
+              type="text"
+              placeholder="البحث عن عقدة..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pr-9 pl-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-inner" 
+              className="w-full h-9 pr-9 pl-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-inner"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            {(filteredDevices?.length || 0) > 0 ? ((filteredDevices || [])).map((d) => (
-              <div 
-                key={d.id} 
+            {(filteredDevices?.length || 0) > 0 ? (filteredDevices || []).map((d) => (
+              <div
+                key={d.id}
                 onClick={() => setDevice(d)}
                 className={`p-3 rounded-xl border transition-all cursor-pointer ${device?.id === d.id ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}
               >
@@ -376,18 +347,19 @@ export default function DashboardPage() {
         </div>
       </aside>
 
+      {/* Main */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         <header className="h-16 bg-white border-b border-slate-200/80 shadow-sm flex flex-row items-center justify-between px-4 sm:px-6 z-10 shrink-0">
           <div className="flex flex-row items-center gap-4">
             <div className="lg:hidden flex flex-row items-center gap-3">
               <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100">
-                 {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
               <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md">
                 <Shield className="w-4 h-4" />
               </div>
             </div>
-            
+
             <div className="flex flex-row items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono">
               <Radar className="w-4 h-4 text-emerald-500" />
               <span className="text-slate-600 hidden sm:inline-block">عقدة الجهاز:</span>
@@ -420,225 +392,183 @@ export default function DashboardPage() {
             </div>
           ) : (
             <>
-
-          
-          <div className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border shadow-sm ${isStolen ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50/50 border-blue-200/60 text-blue-900'}`}>
-            <div className="flex flex-row items-center gap-3.5">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isStolen ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                {isStolen ? <AlertTriangle className="w-5 h-5 animate-pulse" /> : <ShieldCheck className="w-5 h-5" />}
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="font-bold text-sm sm:text-base">
-                  {isStolen ? 'حالة طوارئ: تم الإبلاغ عن سرقة الجهاز' : 'الحالة التكتيكية: مستقرة (DEFCON-5)'}
-                </span>
-                <span className={`text-xs ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>
-                  {isStolen ? 'بروتوكولات التتبع السري وتأمين البيانات نشطة بالكامل.' : 'جميع الأنظمة الدفاعية تعمل ضمن المعايير الطبيعية. لا توجد تهديدات.'}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-row items-center gap-2 sm:gap-4 font-mono text-[10px] sm:text-xs">
-              <div className="flex flex-col items-end">
-                <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>تشفير القناة</span>
-                <span className="font-bold">AES-256 E2EE</span>
-              </div>
-              <div className="w-px h-8 bg-slate-200/80"></div>
-              <div className="flex flex-col items-end">
-                <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>بروتوكول الربط</span>
-                <span className="font-bold text-emerald-600 flex flex-row items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  نشط
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md flex flex-col gap-4 relative z-10 min-h-[450px] lg:h-[450px]">
-            <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden border border-slate-300/80 relative shadow-inner bg-slate-100">
-              
-              <div className="absolute inset-0 z-0">
-                <DeviceMap 
-                  latitude={latitude} 
-                  longitude={longitude} 
-                  accuracy={accuracy}
-                  isOnline={isOnline}
-                  batteryLevel={batteryLevel}
-                  deviceId={device?.device_uid}
-                  history={locationHistory}
-                />
-              </div>
-
-              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.03)] z-10"></div>
-              
-              <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center opacity-30 mix-blend-overlay">
-                <div className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] border border-blue-500 rounded-full flex items-center justify-center relative">
-                  <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] border border-emerald-500/50 rounded-full border-dashed animate-[spin_30s_linear_infinite]"></div>
-                  <div className="w-full h-px bg-blue-500/50 absolute top-1/2 -translate-y-1/2"></div>
-                  <div className="h-full w-px bg-blue-500/50 absolute left-1/2 -translate-x-1/2"></div>
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-500 absolute"></div>
-                </div>
-              </div>
-
-              <div className="absolute top-4 left-4 right-4 z-20 flex flex-row justify-between items-start pointer-events-none">
-                <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1 font-mono text-[10px]">
-                  <div className="flex flex-row items-center gap-2 text-slate-700 font-bold">
-                    <MapPin className="w-3 h-3 text-blue-600" />
-                    <span>{latitude ? Number(latitude).toFixed(6) : 'N/A'}, {longitude ? Number(longitude).toFixed(6) : 'N/A'}</span>
+              {/* Status Banner */}
+              <div className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border shadow-sm ${isStolen ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50/50 border-blue-200/60 text-blue-900'}`}>
+                <div className="flex flex-row items-center gap-3.5">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isStolen ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                    {isStolen ? <AlertTriangle className="w-5 h-5 animate-pulse" /> : <ShieldCheck className="w-5 h-5" />}
                   </div>
-                  <div className="text-slate-500 flex flex-row items-center gap-1 text-[9px]">
-                    <Crosshair className="w-3 h-3" />
-                    دقة التحديد: ±{accuracy || 0}m
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-bold text-sm sm:text-base">
+                      {isStolen ? 'حالة طوارئ: تم الإبلاغ عن سرقة الجهاز' : 'الحالة التكتيكية: مستقرة (DEFCON-5)'}
+                    </span>
+                    <span className={`text-xs ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>
+                      {isStolen ? 'بروتوكولات التتبع السري وتأمين البيانات نشطة بالكامل.' : 'جميع الأنظمة الدفاعية تعمل ضمن المعايير الطبيعية. لا توجد تهديدات.'}
+                    </span>
                   </div>
                 </div>
-                
-                <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1.5 font-mono text-[10px] items-end">
-                  <div className="flex flex-row items-center gap-1.5 text-slate-700 font-bold">
-                    <span>{batteryLevel}%</span>
-                    <Battery className={`w-3 h-3 ${batteryLevel > 20 ? 'text-emerald-500' : 'text-rose-500'}`} />
+                <div className="flex flex-row items-center gap-2 sm:gap-4 font-mono text-[10px] sm:text-xs">
+                  <div className="flex flex-col items-end">
+                    <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>تشفير القناة</span>
+                    <span className="font-bold">AES-256 E2EE</span>
                   </div>
-                  <div className={`flex flex-row items-center gap-1 text-[9px] ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    <Wifi className="w-3 h-3" />
-                    {isOnline ? 'متصل بالشبكة' : 'غير متصل'}
+                  <div className="w-px h-8 bg-slate-200/80"></div>
+                  <div className="flex flex-col items-end">
+                    <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>بروتوكول الربط</span>
+                    <span className="font-bold text-emerald-600 flex flex-row items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      نشط
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg shadow-sm font-bold text-[10px] flex flex-row items-center gap-1.5">
-                  <ShieldCheck className="w-3 h-3" />
-                  نطاق جغرافي آمن
+              {/* Map */}
+              <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md flex flex-col gap-4 relative z-10 min-h-[450px] lg:h-[450px]">
+                <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden border border-slate-300/80 relative shadow-inner bg-slate-100">
+                  <div className="absolute inset-0 z-0">
+                    <DeviceMap
+                      latitude={latitude}
+                      longitude={longitude}
+                      accuracy={accuracy}
+                      isOnline={isOnline}
+                      batteryLevel={batteryLevel}
+                      deviceId={device?.device_uid}
+                      history={locationHistory}
+                    />
+                  </div>
+
+                  <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.03)] z-10"></div>
+
+                  <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center opacity-30 mix-blend-overlay">
+                    <div className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] border border-blue-500 rounded-full flex items-center justify-center relative">
+                      <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] border border-emerald-500/50 rounded-full border-dashed animate-[spin_30s_linear_infinite]"></div>
+                      <div className="w-full h-px bg-blue-500/50 absolute top-1/2 -translate-y-1/2"></div>
+                      <div className="h-full w-px bg-blue-500/50 absolute left-1/2 -translate-x-1/2"></div>
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-500 absolute"></div>
+                    </div>
+                  </div>
+
+                  <div className="absolute top-4 left-4 right-4 z-20 flex flex-row justify-between items-start pointer-events-none">
+                    <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1 font-mono text-[10px]">
+                      <div className="flex flex-row items-center gap-2 text-slate-700 font-bold">
+                        <MapPin className="w-3 h-3 text-blue-600" />
+                        <span>{latitude.toFixed(6)}, {longitude.toFixed(6)}</span>
+                      </div>
+                      <div className="text-slate-500 flex flex-row items-center gap-1 text-[9px]">
+                        <Crosshair className="w-3 h-3" />
+                        دقة التحديد: ±{accuracy}m
+                      </div>
+                    </div>
+
+                    <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1.5 font-mono text-[10px] items-end">
+                      <div className="flex flex-row items-center gap-1.5 text-slate-700 font-bold">
+                        <span>{batteryLevel}%</span>
+                        <Battery className={`w-3 h-3 ${batteryLevel > 20 ? 'text-emerald-500' : 'text-rose-500'}`} />
+                      </div>
+                      <div className={`flex flex-row items-center gap-1 text-[9px] ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <Wifi className="w-3 h-3" />
+                        {isOnline ? 'متصل بالشبكة' : 'غير متصل'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg shadow-sm font-bold text-[10px] flex flex-row items-center gap-1.5">
+                      <ShieldCheck className="w-3 h-3" />
+                      نطاق جغرافي آمن
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 shrink-0">
-            <button onClick={handleStartScream} disabled={isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Volume2 className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-800">إطلاق إنذار صاخب</span>
-                <span className="text-[10px] text-slate-500">تفعيل الصفارة الإجبارية 🔊</span>
-              </div>
-            </button>
+              {/* Command Matrix */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 shrink-0">
+                <button onClick={handleStartScream} disabled={isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform"><Volume2 className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-slate-800">إطلاق إنذار صاخب</span><span className="text-[10px] text-slate-500">تفعيل الصفارة الإجبارية 🔊</span></div>
+                </button>
 
-            <button onClick={handleStopScreamClick} disabled={!isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <VolumeX className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-800">إيقاف الإنذار</span>
-                <span className="text-[10px] text-slate-500">كتم صوت الإنذار 🔇</span>
-              </div>
-            </button>
+                <button onClick={handleStopScreamClick} disabled={!isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform"><VolumeX className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-slate-800">إيقاف الإنذار</span><span className="text-[10px] text-slate-500">كتم صوت الإنذار 🔇</span></div>
+                </button>
 
-            <button onClick={handleLocate} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <MapPin className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-800">تحديد الموقع (GPS)</span>
-                <span className="text-[10px] text-slate-500">تتبع الإحداثيات الحية 📍</span>
-              </div>
-            </button>
+                <button onClick={handleLocate} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform"><MapPin className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-slate-800">تحديد الموقع (GPS)</span><span className="text-[10px] text-slate-500">تتبع الإحداثيات الحية 📍</span></div>
+                </button>
 
-            <button onClick={handleStartSearch} disabled={isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BluetoothSearching className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-800">بدء البحث (BLE)</span>
-                <span className="text-[10px] text-slate-500">تفعيل الرادار المحلي 📶</span>
-              </div>
-            </button>
+                <button onClick={handleStartSearch} disabled={isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform"><BluetoothSearching className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-slate-800">بدء البحث (BLE)</span><span className="text-[10px] text-slate-500">تفعيل الرادار المحلي 📶</span></div>
+                </button>
 
-            <button onClick={handleStopSearch} disabled={!isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Bluetooth className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-800">إيقاف البحث</span>
-                <span className="text-[10px] text-slate-500">تعطيل الرادار المحلي 🛑</span>
-              </div>
-            </button>
+                <button onClick={handleStopSearch} disabled={!isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform"><Bluetooth className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-slate-800">إيقاف البحث</span><span className="text-[10px] text-slate-500">تعطيل الرادار المحلي 🛑</span></div>
+                </button>
 
-            <button onClick={handleStartStolen} disabled={isStolen || !device} className="bg-white rounded-2xl p-4 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <ShieldAlert className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-rose-700">وضع السرقة</span>
-                <span className="text-[10px] text-rose-500/80">تفعيل بروتوكول السرقة 🚨</span>
-              </div>
-            </button>
+                <button onClick={handleStartStolen} disabled={isStolen || !device} className="bg-white rounded-2xl p-4 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform"><ShieldAlert className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-rose-700">وضع السرقة</span><span className="text-[10px] text-rose-500/80">تفعيل بروتوكول السرقة 🚨</span></div>
+                </button>
 
-            <button onClick={handleStopStolenClick} disabled={!isStolen || !device} className="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-emerald-700">إلغاء وضع السرقة</span>
-                <span className="text-[10px] text-emerald-500/80">إلغاء بلاغ السرقة ✅</span>
-              </div>
-            </button>
+                <button onClick={handleStopStolenClick} disabled={!isStolen || !device} className="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform"><CheckCircle className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-emerald-700">إلغاء وضع السرقة</span><span className="text-[10px] text-emerald-500/80">إلغاء بلاغ السرقة ✅</span></div>
+                </button>
 
-            <button onClick={handleDeleteClick} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Trash2 className="w-6 h-6" />
+                <button onClick={handleDeleteClick} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform"><Trash2 className="w-6 h-6" /></div>
+                  <div className="flex flex-col"><span className="font-bold text-xs text-slate-700">مسح الجهاز</span><span className="text-[10px] text-slate-500/80">حذف وتجميد الجهاز 🗑️</span></div>
+                </button>
               </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-700">مسح الجهاز</span>
-                <span className="text-[10px] text-slate-500/80">حذف وتجميد الجهاز 🗑️</span>
-              </div>
-            </button>
-          </div>
 
-          <div className="bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-64 flex flex-col relative z-10 overflow-hidden mb-6 shrink-0">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-emerald-400 to-transparent opacity-50"></div>
-            
-            <div className="flex flex-row items-center justify-between border-b border-slate-700/80 pb-3 mb-3 shrink-0">
-              <div className="flex flex-row items-center gap-2">
-                <Terminal className="w-4 h-4 text-emerald-400" />
-                <span className="font-bold tracking-widest text-[10px] text-slate-100 uppercase">سجل التدقيق والأحداث المباشر</span>
-              </div>
-              <div className="flex flex-row items-center gap-2 text-[10px]">
-                <span className="text-slate-500">قناة مشفرة</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex flex-col-reverse">
-              {(logs || []).length > 0 ? ([...(logs || [])]).reverse().map((log, index) => (
-                <div key={index} className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
-                  <span className="text-slate-500 shrink-0 text-[10px]">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
-                  <span className={`break-words ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
-                    <span className="text-blue-400 mr-1">$</span>
-                    {log}
-                  </span>
+              {/* Terminal Log */}
+              <div className="bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-64 flex flex-col relative z-10 overflow-hidden mb-6 shrink-0">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-emerald-400 to-transparent opacity-50"></div>
+                <div className="flex flex-row items-center justify-between border-b border-slate-700/80 pb-3 mb-3 shrink-0">
+                  <div className="flex flex-row items-center gap-2">
+                    <Terminal className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold tracking-widest text-[10px] text-slate-100 uppercase">سجل التدقيق والأحداث المباشر</span>
+                  </div>
+                  <div className="flex flex-row items-center gap-2 text-[10px]">
+                    <span className="text-slate-500">قناة مشفرة</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  </div>
                 </div>
-              )) : (
-                <div className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
-                  <span className="text-slate-500 shrink-0">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
-                  <span className="text-slate-400">
-                    <span className="text-blue-400 mr-1">$</span>
-                    Waiting for API activity...
-                  </span>
+
+                <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex flex-col-reverse">
+                  {(logs || []).length > 0 ? [...(logs || [])].reverse().map((log, index) => (
+                    <div key={index} className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                      <span className="text-slate-500 shrink-0 text-[10px]">[{new Date().toISOString().split('T')[1].slice(0, -1)}]</span>
+                      <span className={`break-words ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
+                        <span className="text-blue-400 mr-1">$</span>
+                        {log}
+                      </span>
+                    </div>
+                  )) : (
+                    <div className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                      <span className="text-slate-500 shrink-0">[{new Date().toISOString().split('T')[1].slice(0, -1)}]</span>
+                      <span className="text-slate-400">
+                        <span className="text-blue-400 mr-1">$</span>
+                        Waiting for API activity...
+                      </span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-          
+              </div>
             </>
           )}
         </div>
       </main>
 
+      {/* Modals */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <VolumeX className="w-8 h-8" />
-            </div>
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><VolumeX className="w-8 h-8" /></div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">إيقاف الإنذار</h3>
             <p className="text-slate-500 text-xs mb-6">يرجى إدخال كلمة المرور لتأكيد إيقاف الإنذار.</p>
             <div className="relative mb-6">
@@ -658,9 +588,7 @@ export default function DashboardPage() {
       {showDeleteModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
-            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-8 h-8" />
-            </div>
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><Trash2 className="w-8 h-8" /></div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">تأكيد الحذف</h3>
             <p className="text-slate-500 text-xs mb-6">هل أنت متأكد من حذف الجهاز؟ سيتم مسح جميع البيانات.</p>
             <div className="relative mb-6">
@@ -680,12 +608,10 @@ export default function DashboardPage() {
       {showPinModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><ShieldCheck className="w-8 h-8" /></div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">إلغاء وضع السرقة</h3>
             <p className="text-slate-500 text-xs mb-6">أدخل رمز PIN المكون من 6 أرقام لتأكيد استعادة الجهاز.</p>
-            <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,''))} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
+            <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
             <div className="flex gap-3">
               <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition text-sm">إلغاء</button>
               <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md text-sm">تأكيد الاستعادة</button>
@@ -697,9 +623,7 @@ export default function DashboardPage() {
       {showUnregisterModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
-            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-8 h-8" />
-            </div>
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><Trash2 className="w-8 h-8" /></div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">إلغاء تسجيل الجهاز</h3>
             <p className="text-slate-500 text-xs mb-6">سيتم إزالة الجهاز من لوحة التحكم، لا يمكن التراجع عن هذا الإجراء.</p>
             <div className="relative mb-6">
@@ -709,20 +633,19 @@ export default function DashboardPage() {
               </button>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => {setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput('');}} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition text-sm">إلغاء</button>
+              <button onClick={() => { setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput(''); }} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition text-sm">إلغاء</button>
               <button onClick={handleUnregisterDevice} disabled={actionLoading || !deletePasswordInput} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 shadow-md text-sm">تأكيد المسح</button>
             </div>
           </div>
         </div>
       )}
 
-      <SettingsModal 
-        isOpen={isSettingsOpen} 
-        onClose={() => setIsSettingsOpen(false)} 
-        user={user} 
-        onUserUpdate={(u: any) => setUser({ ...user, ...u })} 
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        user={user}
+        onUserUpdate={(u: any) => setUser({ ...user, ...u })}
       />
-
     </div>
   );
 }
