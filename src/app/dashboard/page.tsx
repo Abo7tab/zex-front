@@ -1,13 +1,14 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
+import { useTerminalStore } from '@/store/useTerminalStore';
 import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth, Settings, Eye, EyeOff, Sliders } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 import SettingsModal from '@/components/modals/SettingsModal';
-import LiveAuditTerminal from '@/components/dashboard/LiveAuditTerminal';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -26,11 +27,13 @@ export default function DashboardPage() {
   const [pinInput, setPinInput] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [isBottomSheetExpanded, setIsBottomSheetExpanded] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showControlCard, setShowControlCard] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
+  const logs = useTerminalStore((state) => state.logs);
+  const router = useRouter();
+
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const timer = setInterval(() => setTick(t => t + 1), 10000);
@@ -38,7 +41,10 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    getMe().then((data) => setUser(data.data || data)).catch(() => logout());
+    getMe().then((data) => setUser(data.data || data)).catch(() => {
+      logout();
+      router.push('/login');
+    });
     fetchDevices();
   }, []);
 
@@ -116,7 +122,7 @@ export default function DashboardPage() {
 
   const handleLocate = async () => {
     if (!device) return;
-    try { await locateDevice(device.id); } catch(e) { alert('Failed to locate'); }
+    try { await locateDevice(device.id); } catch(e) { alert('فشل تحديد الموقع'); }
   };
 
   const toggleSearch = async () => {
@@ -125,7 +131,7 @@ export default function DashboardPage() {
       if (isSearching) { await stopSearchMode(device.id); setDevice((p: any) => ({...p, is_searching: false})); setRtState((p: any) => p ? {...p, is_searching: false} : null); }
       else { await startSearchMode(device.id, 30); setDevice((p: any) => ({...p, is_searching: true})); setRtState((p: any) => p ? {...p, is_searching: true} : null); }
       fetchDevices();
-    } catch(e) { alert('Failed to toggle search'); }
+    } catch(e) { alert('فشل تغيير وضع البحث'); }
   };
 
   const handleScreamToggle = async () => {
@@ -133,7 +139,7 @@ export default function DashboardPage() {
     if (isScreaming) {
       setShowPasswordModal(true);
     } else {
-      try { await screamDevice(device.id); setDevice((p: any) => ({...p, is_screaming: true})); setRtState((p: any) => p ? {...p, is_screaming: true} : null); fetchDevices(); } catch(e) { alert('Failed'); }
+      try { await screamDevice(device.id); setDevice((p: any) => ({...p, is_screaming: true})); setRtState((p: any) => p ? {...p, is_screaming: true} : null); fetchDevices(); } catch(e) { alert('فشل التشغيل'); }
     }
   };
 
@@ -147,7 +153,7 @@ export default function DashboardPage() {
       setDevice((prev: any) => prev ? { ...prev, is_screaming: false } : null);
       setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_screaming: false }, is_screaming: false } : null);
       fetchDevices();
-    } catch(e) { alert('Invalid Password'); }
+    } catch(e) { alert('كلمة المرور غير صحيحة'); }
     finally { setActionLoading(false); }
   };
 
@@ -161,7 +167,7 @@ export default function DashboardPage() {
       const remaining = devices.filter((d: any) => d.id !== device.id);
       setDevices(remaining);
       setDevice(remaining.length > 0 ? remaining[0] : null);
-    } catch(e) { alert('Failed to delete device or Invalid Password'); }
+    } catch(e) { alert('فشل المسح أو كلمة المرور غير صحيحة'); }
     finally { setActionLoading(false); }
   };
 
@@ -187,7 +193,7 @@ export default function DashboardPage() {
     if (isStolen) {
       setShowPinModal(true);
     } else {
-      try { await markStolen(device.id); setDevice((p: any) => ({...p, is_stolen: true})); setRtState((p: any) => p ? {...p, is_stolen: true} : null); fetchDevices(); } catch(e) { alert('Failed'); }
+      try { await markStolen(device.id); setDevice((p: any) => ({...p, is_stolen: true})); setRtState((p: any) => p ? {...p, is_stolen: true} : null); fetchDevices(); } catch(e) { alert('فشل التشغيل'); }
     }
   };
 
@@ -201,336 +207,447 @@ export default function DashboardPage() {
       setDevice((prev: any) => prev ? { ...prev, is_stolen: false, is_screaming: false, is_searching: false } : null);
       setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_stolen: false, is_screaming: false, is_searching: false }, is_stolen: false, is_screaming: false, is_searching: false } : null);
       fetchDevices();
-    } catch(e) { alert('Invalid PIN Code'); }
+    } catch(e) { alert('رمز PIN غير صحيح'); }
     finally { setActionLoading(false); }
   };
 
+  const filteredDevices = devices.filter(d => 
+    d.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    d.model?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-100 flex font-sans text-slate-800">
+    <div className="bg-slate-50 text-slate-900 min-h-screen flex selection:bg-blue-600 selection:text-white font-sans overflow-hidden" dir="rtl">
       
-      {/* Mobile Top Bar */}
-      <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-[#111827] rounded-xl flex items-center justify-center font-semibold text-white">Z</div>
-          <span className="font-semibold text-sm">ZEX Military</span>
+      {/* Subtle Grid Background */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.035] bg-[radial-gradient(#1e3a8a_1px,transparent_1px)] [background-size:24px_24px]"></div>
+
+      {/* Sidebar: Devices & Operator Intel */}
+      <aside className="w-80 bg-white border-l border-slate-200/80 shadow-md hidden lg:flex flex-col z-20 h-screen relative shrink-0">
+        <div className="p-5 border-b border-slate-100 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/25 shrink-0">
+              <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>military_tech</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-base text-slate-900 tracking-tight leading-tight">ZEX MILITARY</span>
+              <span className="text-[10px] font-semibold text-slate-500 tracking-wider">SECURE OPERATIONS</span>
+            </div>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0">
+              <span className="material-symbols-outlined text-base">person</span>
+            </div>
+            <div className="flex flex-col overflow-hidden">
+              <span className="font-bold text-xs text-slate-800 truncate">{user?.name || 'Operator Alpha'}</span>
+              <span className="text-[10px] text-slate-500 font-mono truncate">{user?.email || 'admin@c4isr.gov'}</span>
+            </div>
+          </div>
         </div>
-        <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
-          {showMobileMenu ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
 
-      {/* A. Background Map Layer */}
-      <div className="absolute inset-0 z-0">
-        {latitude != null && longitude != null ? (
-           <>
-             <DeviceMap 
-               latitude={latitude} 
-               longitude={longitude} 
-               accuracy={accuracy} 
-               deviceName={device?.device_name || 'Device'} 
-               locationHistory={locationHistory}
-             />
-             {rtState?.provider === 'sms_relay' && (
-               <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg font-semibold text-sm flex items-center space-x-2 space-x-reverse">
-                 <span>📍 تم التحديث عبر رسالة SMS</span>
-               </div>
-             )}
-           </>
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-200 text-slate-400">
-            <MapPin className="w-12 h-12 mb-4 opacity-20" />
-            <p className="font-medium">لا توجد بيانات موقع متاحة حتى الآن</p>
-          </div>
-        )}
-      </div>
-
-      {/* B. Left Fixed Sidebar / Mobile Menu */}
-      <div className={`fixed md:relative top-16 md:top-0 left-0 w-full md:w-80 h-[calc(100%-4rem)] md:h-full bg-white z-20 border-r border-slate-200 flex-col justify-between p-6 shadow-lg transition-transform ${showMobileMenu ? 'flex' : 'hidden md:flex'}`}>
-        <div>
-          <div className="hidden md:flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 bg-[#111827] rounded-xl flex items-center justify-center font-semibold text-xl text-white">Z</div>
-            <span className="text-xl font-semibold tracking-tight text-slate-800">ZEX Military</span>
+        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm text-blue-600">devices</span>
+              الوحدات النشطة
+            </span>
+            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px]">{devices.length} مقترن</span>
           </div>
 
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">أجهزتي ({devices.length})</h3>
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-              {devices.map((d: any) => (
-                <div 
-                  key={d.id} 
-                  onClick={() => {
-                    setRtState(null);
-                    setLocationHistory([]);
-                      setDevice(d); setShowControlCard(true);
-                      setShowMobileMenu(false);
-                  }}
-                  className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${device?.id === d.id ? 'bg-slate-50 border-blue-500 shadow-sm' : 'bg-white border-transparent hover:bg-slate-50'}`}
-                >
-                  <div className="flex items-center space-x-3 space-x-reverse">
-                    <Smartphone className={`w-5 h-5 ${device?.id === d.id ? 'text-blue-500' : 'text-slate-400'}`} />
-                    <div>
-                      <p className="font-semibold text-sm text-slate-800">{d.device_name}</p>
-                      <p className="text-xs text-slate-500">{d.device_model}</p>
-                    </div>
+          <div className="relative shrink-0">
+            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">search</span>
+            <input 
+              type="text" 
+              placeholder="البحث عن عقدة..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-9 pr-9 pl-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-inner" 
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {filteredDevices.length > 0 ? filteredDevices.map((d) => (
+              <div 
+                key={d.id} 
+                onClick={() => setDevice(d)}
+                className={`p-3 rounded-xl border transition-all cursor-pointer ${device?.id === d.id ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`material-symbols-outlined text-base ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`}>smartphone</span>
+                    <span className={`font-bold text-xs ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>{d.name}</span>
                   </div>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setUnregisterTarget(d);
-                      setShowUnregisterModal(true);
-                    }}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                    title="حذف الجهاز من الحساب (إلغاء الربط)"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>}
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className={`${device?.id === d.id ? 'text-blue-600' : 'text-slate-500'} truncate mr-2`}>{d.model}</span>
+                  <span className={`px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 ${d.battery_level > 20 ? (device?.id === d.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600') : 'bg-rose-100 text-rose-700'}`}>
+                    <span className="material-symbols-outlined text-[10px]">{d.battery_level > 20 ? 'battery_charging_full' : 'battery_alert'}</span>
+                    {d.battery_level ?? 0}%
+                  </span>
+                </div>
+              </div>
+            )) : (
+              <div className="text-xs text-slate-400 text-center py-4">لا توجد أجهزة مقترنة</div>
+            )}
           </div>
         </div>
+
+        <div className="p-4 border-t border-slate-100 flex flex-col gap-2 shrink-0 bg-slate-50/50">
+          <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors py-2 px-3 hover:bg-white rounded-lg hover:shadow-sm">
+            <span className="material-symbols-outlined text-lg">settings</span>
+            إعدادات النظام
+          </button>
+          <button onClick={() => { logout(); router.push('/login'); }} className="flex items-center gap-2 text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors py-2 px-3 hover:bg-white rounded-lg hover:shadow-sm">
+            <span className="material-symbols-outlined text-lg">logout</span>
+            تسجيل الخروج
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Operational Area */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         
-        <div className="space-y-3 pt-6 border-t border-slate-100 mt-auto">
-          <div className="flex items-center justify-between px-3 py-2">
-            <div className="flex items-center space-x-3 space-x-reverse">
-              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
-                <User className="w-4 h-4 text-slate-500" />
+        {/* Top Command Header */}
+        <header className="h-16 bg-white border-b border-slate-200/80 shadow-sm flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="lg:hidden flex items-center gap-3">
+              <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100">
+                 <span className="material-symbols-outlined text-sm">{showMobileMenu ? 'close' : 'menu'}</span>
+              </button>
+              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md">
+                <span className="material-symbols-outlined text-sm">military_tech</span>
               </div>
-              <span className="text-sm font-medium text-slate-700">{user?.name || 'جارٍ التحميل...'}</span>
             </div>
-            <button onClick={() => setIsSettingsOpen(true)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors" title="الإعدادات">
-              <Settings className="w-4 h-4" />
+            
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono">
+              <span className="material-symbols-outlined text-emerald-500 text-sm">radar</span>
+              <span className="text-slate-600 hidden sm:inline-block">NODE:</span>
+              <span className="font-bold text-slate-900">{device?.device_uid || 'WAITING...'}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-1.5 text-xs font-bold cursor-pointer hover:bg-rose-100 transition-colors" onClick={() => alert('SOS BROADCAST SENT')}>
+              <span className="material-symbols-outlined text-sm animate-pulse">crisis_alert</span>
+              <span>EMERGENCY SOS</span>
+            </div>
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-3 py-1.5 text-xs font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="hidden sm:inline-block">SYSTEM</span> ONLINE
+            </div>
+          </div>
+        </header>
+
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 relative z-10 scrollbar-thin scrollbar-thumb-slate-200">
+          
+          {/* Operational DEFCON Banner */}
+          <div className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border shadow-sm ${isStolen ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50/50 border-blue-200/60 text-blue-900'}`}>
+            <div className="flex items-center gap-3.5">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isStolen ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                <span className={`material-symbols-outlined text-xl ${isStolen ? 'animate-pulse' : ''}`}>{isStolen ? 'warning' : 'gpp_good'}</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-bold text-sm sm:text-base">
+                  {isStolen ? 'حالة طوارئ: تم الإبلاغ عن سرقة الجهاز' : 'الحالة التكتيكية: مستقرة (DEFCON-5)'}
+                </span>
+                <span className={`text-xs ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>
+                  {isStolen ? 'بروتوكولات التتبع السري وتأمين البيانات نشطة بالكامل.' : 'جميع الأنظمة الدفاعية تعمل ضمن المعايير الطبيعية. لا توجد تهديدات.'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4 font-mono text-[10px] sm:text-xs">
+              <div className="flex flex-col items-end">
+                <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>تشفير القناة</span>
+                <span className="font-bold">AES-256 E2EE</span>
+              </div>
+              <div className="w-px h-8 bg-slate-200/80"></div>
+              <div className="flex flex-col items-end">
+                <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>بروتوكول الربط</span>
+                <span className="font-bold text-emerald-600 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  نشط
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* C4ISR Map Visualizer */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md flex flex-col gap-4 relative z-10 min-h-[450px] lg:h-[450px]">
+            <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden border border-slate-300/80 relative shadow-inner bg-slate-100">
+              
+              {/* Actual Map */}
+              <div className="absolute inset-0 z-0">
+                <DeviceMap 
+                  latitude={latitude} 
+                  longitude={longitude} 
+                  accuracy={accuracy}
+                  isOnline={isOnline}
+                  batteryLevel={batteryLevel}
+                  deviceId={device?.device_uid}
+                  history={locationHistory}
+                />
+              </div>
+
+              {/* Map Vignette Overlay */}
+              <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.03)] z-10"></div>
+              
+              {/* Reticle / Crosshair Overlay (Visual Only) */}
+              <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-30 mix-blend-overlay">
+                <div className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] border border-blue-500 rounded-full flex items-center justify-center relative">
+                  <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] border border-emerald-500/50 rounded-full border-dashed animate-[spin_30s_linear_infinite]"></div>
+                  <div className="w-full h-px bg-blue-500/50 absolute top-1/2 -translate-y-1/2"></div>
+                  <div className="h-full w-px bg-blue-500/50 absolute left-1/2 -translate-x-1/2"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-blue-500 absolute"></div>
+                </div>
+              </div>
+
+              {/* Floating Top HUD Metrics */}
+              <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
+                <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1 font-mono text-[10px]">
+                  <div className="flex items-center gap-2 text-slate-700 font-bold">
+                    <span className="material-symbols-outlined text-xs text-blue-600">satellite_alt</span>
+                    <span>{latitude ? latitude.toFixed(6) : 'N/A'}, {longitude ? longitude.toFixed(6) : 'N/A'}</span>
+                  </div>
+                  <div className="text-slate-500 flex items-center gap-1 text-[9px]">
+                    <span className="material-symbols-outlined text-[10px]">my_location</span>
+                    دقة التحديد: ±{accuracy || 0}m
+                  </div>
+                </div>
+                
+                <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1.5 font-mono text-[10px] items-end">
+                  <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+                    <span>{batteryLevel}%</span>
+                    <span className={`material-symbols-outlined text-xs ${batteryLevel > 20 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {batteryLevel > 20 ? 'battery_charging_full' : 'battery_alert'}
+                    </span>
+                  </div>
+                  <div className={`flex items-center gap-1 text-[9px] ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <span className="material-symbols-outlined text-[10px]">wifi_tethering</span>
+                    {isOnline ? 'متصل بالشبكة' : 'غير متصل'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Geofence / Status Badge */}
+              <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg shadow-sm font-bold text-[10px] flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-xs">shield</span>
+                  نطاق جغرافي آمن
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Strict Command Matrix (8 Buttons EXACTLY as requested) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 shrink-0">
+            {/* 1. Scream */}
+            <button onClick={handleScreamToggle} disabled={isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">volume_up</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-slate-800">إطلاق إنذار صاخب</span>
+                <span className="text-[10px] text-slate-500">Force Siren 🔊</span>
+              </div>
+            </button>
+
+            {/* 2. Stop Scream */}
+            <button onClick={() => setShowPasswordModal(true)} disabled={!isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">volume_off</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-slate-800">إيقاف الإنذار</span>
+                <span className="text-[10px] text-slate-500">Mute Siren 🔇</span>
+              </div>
+            </button>
+
+            {/* 3. Locate GPS */}
+            <button onClick={handleLocate} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">my_location</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-slate-800">تحديد الموقع (GPS)</span>
+                <span className="text-[10px] text-slate-500">Track Location 📍</span>
+              </div>
+            </button>
+
+            {/* 4. BLE Search */}
+            <button onClick={toggleSearch} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${isSearching ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-indigo-50 text-indigo-600'}`}>
+                <span className={`material-symbols-outlined text-2xl ${isSearching ? 'animate-spin' : ''}`}>bluetooth_searching</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-slate-800">{isSearching ? 'البحث قيد التشغيل' : 'بدء البحث المحيطي (BLE)'}</span>
+                <span className="text-[10px] text-slate-500">Radar Mode 📶</span>
+              </div>
+            </button>
+
+            {/* 5. Mark Stolen */}
+            <button onClick={handleStolenToggle} disabled={isStolen || !device} className="bg-white rounded-2xl p-4 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">gpp_bad</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-rose-700">وضع السرقة</span>
+                <span className="text-[10px] text-rose-500/80">Mark Stolen 🚨</span>
+              </div>
+            </button>
+
+            {/* 6. Lock Device */}
+            <button onClick={() => alert('LOCK INITIATED')} disabled={!device} className="bg-white rounded-2xl p-4 border border-amber-200/80 shadow-sm hover:shadow-md hover:border-amber-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">lock</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-amber-700">قفل وتأمين الهاتف</span>
+                <span className="text-[10px] text-amber-500/80">Secure Lock 🔒</span>
+              </div>
+            </button>
+
+            {/* 7. Mark Found */}
+            <button onClick={() => setShowPinModal(true)} disabled={!isStolen || !device} className="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">gpp_good</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-emerald-700">إلغاء وضع السرقة</span>
+                <span className="text-[10px] text-emerald-500/80">Mark Found ✅</span>
+              </div>
+            </button>
+
+            {/* 8. Delete Device */}
+            <button onClick={() => setShowDeleteModal(true)} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-2xl">delete_forever</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-slate-700">مسح الجهاز من النظام</span>
+                <span className="text-[10px] text-slate-500/80">Wipe & Delete 🗑️</span>
+              </div>
             </button>
           </div>
-          <button onClick={logout} className="w-full flex items-center space-x-2 space-x-reverse text-sm text-slate-600 hover:text-slate-800 transition-colors px-3 py-2 rounded-xl hover:bg-slate-50">
-            <LogOut className="h-4 w-4" />
-            <span className="font-semibold">تسجيل الخروج</span>
-          </button>
-          <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">إطار أمان ZEX</p>
-          </div>
-        </div>
-      </div>
 
-      {/* C. Floating Control Card Overlay */}
-      {device && !showControlCard && (
-        <button onClick={() => setShowControlCard(true)} className="hidden md:flex absolute top-6 right-[22rem] z-10 bg-white/95 backdrop-blur-md p-3 rounded-full shadow-lg border border-slate-200/80 items-center justify-center text-slate-600 hover:text-blue-600 hover:bg-slate-50 transition-colors" title="إظهار لوحة التحكم">
-           <Sliders className="w-6 h-6" />
-        </button>
-      )}
-      {device && showControlCard && (
-        <div className={`fixed bottom-0 md:absolute md:bottom-auto md:top-6 left-0 right-0 md:left-auto md:right-[22rem] z-10 w-full md:w-[380px] bg-white/95 backdrop-blur-md rounded-t-3xl md:rounded-3xl p-4 md:p-6 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] md:shadow-2xl border-t md:border border-slate-200/80 flex flex-col transition-all duration-300 ease-in-out transform ${isBottomSheetExpanded ? 'translate-y-0' : 'translate-y-[calc(100%-80px)] md:translate-y-0'}`}>
-          {/* Drag Handle & Mobile Header */}
-          <div className="md:hidden w-full flex flex-col items-center justify-center cursor-pointer pb-2" onClick={() => setIsBottomSheetExpanded(!isBottomSheetExpanded)}>
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mb-3"></div>
+          {/* Live Audit Stream Terminal Component */}
+          <div className="bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-64 flex flex-col relative z-10 overflow-hidden mb-6 shrink-0">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-emerald-400 to-transparent opacity-50"></div>
             
-            {/* Shortened header for collapsed mode */}
-            <div className={`w-full flex justify-between items-center transition-opacity duration-200 ${isBottomSheetExpanded ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
-                  <Smartphone className="w-5 h-5 text-slate-700" />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-slate-800">{device.device_name}</h2>
-                  <div className="flex items-center space-x-2 text-[10px] font-medium mt-0.5">
-                    {isOnline ? (
-                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> متصل</span>
-                    ) : (
-                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل (بانتظار استجابة)</span>
-                    )}
-                    <span className="text-slate-300">•</span>
-                    <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
-                  </div>
-                </div>
+            <div className="flex items-center justify-between border-b border-slate-700/80 pb-3 mb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-400 text-sm">terminal</span>
+                <span className="font-bold tracking-widest text-[10px] text-slate-100 uppercase">Live Audit Stream</span>
               </div>
-              <div className="p-2 text-slate-400 bg-slate-50 rounded-full">
-                <ChevronUp className="w-5 h-5" />
+              <div className="flex items-center gap-2 text-[10px]">
+                <span className="text-slate-500">SECURE SHELL</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex flex-col-reverse">
+              {logs.length > 0 ? [...logs].reverse().map((log, index) => (
+                <div key={index} className="flex items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                  <span className="text-slate-500 shrink-0 text-[10px]">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
+                  <span className={`break-words ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
+                    <span className="text-blue-400 mr-1">$</span>
+                    {log}
+                  </span>
+                </div>
+              )) : (
+                <div className="flex items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                  <span className="text-slate-500 shrink-0">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
+                  <span className="text-slate-400">
+                    <span className="text-blue-400 mr-1">$</span>
+                    Waiting for API activity...
+                  </span>
+                </div>
+              )}
             </div>
           </div>
-
-          <div className={`flex flex-col transition-opacity duration-300 ${isBottomSheetExpanded ? 'opacity-100' : 'opacity-0 md:opacity-100 pointer-events-none md:pointer-events-auto'}`}>
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center space-x-3">
-                <button 
-                    onClick={() => setShowControlCard(false)}
-                    className="p-3 bg-slate-50 border border-slate-100 rounded-2xl hidden md:flex items-center justify-center hover:bg-red-50 hover:border-red-100 transition-colors cursor-pointer group"
-                    title="إخفاء لوحة التحكم"
-                  >
-                    <Smartphone className="w-6 h-6 text-slate-700 group-hover:text-red-500 transition-colors" />
-                  </button>
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-800">{device.device_name}</h2>
-                  <div className="flex items-center space-x-2 text-xs font-medium mt-1">
-                    {isOnline ? (
-                      <span className="text-emerald-600 flex items-center"><Wifi className="w-3 h-3 mr-1"/> متصل</span>
-                    ) : (
-                      <span className="text-slate-500 flex items-center"><WifiOff className="w-3 h-3 mr-1"/> غير متصل (بانتظار استجابة)</span>
-                    )}
-                    <span className="text-slate-300">•</span>
-                    <span className="text-slate-500 flex items-center"><Battery className="w-3 h-3 mr-1"/> {batteryLevel}%</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2 space-x-reverse">
-                  {latitude != null && longitude != null && (
-                    <a 
-                      href={`https://maps.google.com/?q=${latitude},${longitude}`} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="p-2 text-blue-600 bg-blue-50/80 hover:bg-blue-100 transition-colors flex items-center justify-center rounded-xl"
-                      title="فتح في خرائط جوجل"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-            </div>
-
-            <div className="flex justify-between items-center text-xs text-slate-500 mb-4 px-1">
-              <span>{lastHeartbeatStr ? `تحديث: ${new Date(lastHeartbeatStr).toLocaleTimeString()}` : 'الآن'}</span>
-            </div>
-            {isBleMesh && (
-              <div className="flex items-center gap-2 mb-4 bg-indigo-50/80 text-indigo-700 px-3 py-2 rounded-xl border border-indigo-100">
-                <Bluetooth className="w-4 h-4" />
-                <span className="text-xs font-semibold tracking-wide">📍 تم التحديد عبر شبكة ZEX البلوتوث (BLE Mesh)</span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button onClick={handleScreamToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isScreaming ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md'}`}>
-                  {isScreaming ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">{isScreaming ? 'إيقاف' : 'تشغيل الرنين'}</span>
-              </button>
-              
-              <button onClick={handleStolenToggle} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors ${isStolen ? 'bg-red-500 text-white shadow-sm' : 'bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md'}`}>
-                  {isStolen ? <ShieldCheck className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
-                </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">{isStolen ? 'تم العثور عليه' : 'وضع السرقة'}</span>
-              </button>
-
-              <button onClick={handleLocate} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">تحديد الموقع</span>
-              </button>
-              
-              <button onClick={() => setShowDeleteModal(true)} className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200/60 group">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors bg-white text-slate-600 shadow-sm border border-slate-200/60 group-hover:shadow-md">
-                  <Trash className="w-5 h-5" />
-                </div>
-                <span className="text-[11px] font-semibold text-center text-slate-700">مسح بيانات الهاتف عن بُعد (فرمتة الشاملة)</span>
-              </button>
-            </div>
-
-            <div 
-              onClick={toggleSearch} 
-              className="bg-slate-50 hover:bg-slate-100 cursor-pointer rounded-2xl p-4 flex items-center justify-between border border-slate-200/60 transition-colors"
-            >
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold text-slate-800">التتبع المباشر المستمر</span>
-                <span className="text-xs text-slate-500">{isSearching ? 'نشط (استهلاك عالي للبطارية)' : 'تحديث الموقع لحظة بلحظة'}</span>
-              </div>
-              <div className={`w-12 h-6 rounded-full p-1 transition-colors ${isSearching ? 'bg-blue-600' : 'bg-slate-300'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${isSearching ? '-translate-x-6' : 'translate-x-0'}`}></div>
-              </div>
-            </div>
-            
-            {/* Expanded mode Chevron Down for mobile */}
-            <div className="md:hidden w-full flex justify-center mt-4">
-               <button onClick={() => setIsBottomSheetExpanded(false)} className="p-2 text-slate-400 bg-slate-50 rounded-full">
-                 <ChevronDown className="w-5 h-5" />
-               </button>
-            </div>
-          </div>
+          
         </div>
-      )}
+      </main>
 
-      {/* D. Modals */}
+      {/* Modals from old UI adapted to Light Theme */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <VolumeX className="w-8 h-8" />
+              <span className="material-symbols-outlined text-3xl">volume_off</span>
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">إيقاف الرنين</h3>
-            <p className="text-slate-500 text-sm mb-6">أدخل كلمة المرور لإيقاف الرنين.</p>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">إيقاف الإنذار</h3>
+            <p className="text-slate-500 text-xs mb-6">يرجى إدخال كلمة المرور لتأكيد إيقاف الإنذار.</p>
             <div className="relative mb-6">
-              <input type={showPassword ? "text" : "password"} value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              <input type={showPassword ? "text" : "password"} value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none pr-10 font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700">
+                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
               </button>
             </div>
-            <div className="flex space-x-3">
-              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
-              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">إيقاف</button>
+            <div className="flex gap-3">
+              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition text-sm">إلغاء</button>
+              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md text-sm">تأكيد الإيقاف</button>
             </div>
           </div>
         </div>
       )}
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash className="w-8 h-8" />
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-3xl">delete</span>
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">هل أنت متأكد من مسح كافة بيانات الجهاز؟</h3>
-            <p className="text-slate-500 text-sm mb-6">أدخل كلمة المرور لمسح جميع البيانات من الجهاز بشكل دائم.</p>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">تأكيد الحذف</h3>
+            <p className="text-slate-500 text-xs mb-6">هل أنت متأكد من حذف الجهاز؟ سيتم مسح جميع البيانات.</p>
             <div className="relative mb-6">
-              <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pr-10 font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700">
+                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
               </button>
             </div>
-            <div className="flex space-x-3">
-              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
-              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">مسح نهائي</button>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition text-sm">إلغاء</button>
+              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 shadow-md text-sm">حذف نهائي</button>
             </div>
           </div>
         </div>
       )}
 
       {showPinModal && (
-        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShieldCheck className="w-8 h-8" />
+              <span className="material-symbols-outlined text-3xl">verified_user</span>
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">تم العثور على الجهاز</h3>
-            <p className="text-slate-500 text-sm mb-6">أدخل رمز الـ PIN المكون من 6 أرقام لإلغاء وضع السرقة وفتح الجهاز.</p>
-            <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,''))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
-            <div className="flex space-x-3">
-              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
-              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md shadow-blue-500/20">إلغاء وضع السرقة</button>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">إلغاء وضع السرقة</h3>
+            <p className="text-slate-500 text-xs mb-6">أدخل رمز PIN المكون من 6 أرقام لتأكيد استعادة الجهاز.</p>
+            <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g,''))} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
+            <div className="flex gap-3">
+              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition text-sm">إلغاء</button>
+              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 shadow-md text-sm">تأكيد الاستعادة</button>
             </div>
           </div>
         </div>
       )}
 
-      <LiveAuditTerminal />
-
       {showUnregisterModal && (
-        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-8 h-8" />
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-3xl">phonelink_erase</span>
             </div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">حذف الجهاز من الحساب</h3>
-            <p className="text-slate-500 text-sm mb-6">سيتم إلغاء تسجيل هذا الجهاز من حسابك، ويمكنك إعادة إضافته لاحقاً. يرجى إدخال كلمة المرور للتأكيد.</p>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">إلغاء تسجيل الجهاز</h3>
+            <p className="text-slate-500 text-xs mb-6">سيتم إزالة الجهاز من لوحة التحكم، لا يمكن التراجع عن هذا الإجراء.</p>
             <div className="relative mb-6">
-              <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="كلمة المرور" />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pr-10 font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700">
+                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
               </button>
             </div>
-            <div className="flex space-x-3">
-              <button onClick={() => {setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput('');}} className="flex-1 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">إلغاء</button>
-              <button onClick={handleUnregisterDevice} disabled={actionLoading || !deletePasswordInput} className="flex-1 py-3 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 shadow-md shadow-red-500/20">حذف الجهاز</button>
+            <div className="flex gap-3">
+              <button onClick={() => {setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput('');}} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition text-sm">إلغاء</button>
+              <button onClick={handleUnregisterDevice} disabled={actionLoading || !deletePasswordInput} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 shadow-md text-sm">تأكيد المسح</button>
             </div>
           </div>
         </div>
@@ -542,7 +659,7 @@ export default function DashboardPage() {
         user={user} 
         onUserUpdate={(u: any) => setUser({ ...user, ...u })} 
       />
+
     </div>
   );
 }
-
