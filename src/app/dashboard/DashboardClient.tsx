@@ -48,7 +48,8 @@ export default function DashboardClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const logs = useTerminalStore((state) => state.logs.slice(-50));
+  const allLogs = useTerminalStore((state) => state.logs);
+  const logs = allLogs.slice(-50);
   const router = useRouter();
 
   useEffect(() => {
