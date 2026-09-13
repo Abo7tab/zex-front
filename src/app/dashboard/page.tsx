@@ -122,27 +122,24 @@ export default function DashboardPage() {
   }, [router]);
 
   useEffect(() => {
-    if (device?.device_uid && typeof window !== 'undefined') {
-      try {
-        const unsub = subscribeToDeviceState(device.device_uid, (data: any) => {
-          // Prevent infinite loop by only updating if data actually changed
-          setRtState((prev: any) => {
-            const dataStr = JSON.stringify(data);
-            const prevStr = JSON.stringify(prev);
-            if (dataStr !== prevStr) {
-              return data;
-            }
-            return prev;
-          });
-        });
-        return () => {
-          if (typeof unsub === 'function') unsub();
-        };
-      } catch (e) {
-        console.warn("RT State subscription bypassed");
+  const uid = device?.device_uid;
+  if (!uid || typeof window === 'undefined') return;
+
+  let unsub = null;
+  try {
+    unsub = subscribeToDeviceState(uid, (data) => {
+      if (data) {
+        setRtState(data);
       }
-    }
-  }, [device?.device_uid]);
+    });
+  } catch (e) {
+    console.warn("Firebase sub error", e);
+  }
+
+  return () => {
+    if (typeof unsub === 'function') unsub();
+  };
+}, [device?.device_uid]);
 
   const statusObj = rtState?.status || rtState || {};
   const locObj = rtState?.last_location || rtState?.location || device?.last_location || {};
@@ -165,31 +162,20 @@ export default function DashboardPage() {
     }
   }
 
-  // Disabled temporarily to debug freeze
-  // useEffect(() => {
-  //   let interval: NodeJS.Timeout;
-  //   if (device?.id && (rtState?.live_tracking || rtState?.stolen_mode)) {
-  //     interval = setInterval(() => {
-  //       handleLocate();
-  //     }, 5000);
-  //   }
-  //   return () => clearInterval(interval);
-  // }, [device?.id, rtState?.live_tracking, rtState?.stolen_mode, handleLocate]);
+  
 
-  // Disabled temporarily to debug freeze
-  // useEffect(() => {
-  //   if (latitude != null && longitude != null) {
-  //     setLocationHistory(prev => {
-  //       const last = prev[prev.length - 1];
-  //       if (!last || last[0] !== latitude || last[1] !== longitude) {
-  //         const newHistory: [number, number][] = [...prev, [latitude, longitude]];
-  //         // Limit history to prevent memory leak
-  //         return newHistory.length > 100 ? newHistory.slice(-100) as [number, number][] : newHistory;
-  //       }
-  //       return prev;
-  //     });
-  //   }
-  // }, [latitude, longitude]);
+    useEffect(() => {
+    if (latitude == null || longitude == null) return;
+    
+    setLocationHistory(prev => {
+      const last = prev[prev.length - 1];
+      if (last && last[0] === latitude && last[1] === longitude) {
+        return prev; // Return SAME array reference if unchanged
+      }
+      const updated: [number, number][] = [...prev, [latitude, longitude] as [number, number]];
+      return updated.length > 50 ? updated.slice(-50) : updated;
+    });
+  }, [latitude, longitude]);
 
   if (!mounted || isLoading) {
     return (
