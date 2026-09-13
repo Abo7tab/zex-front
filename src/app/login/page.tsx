@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#0A0F16] p-4 font-mono">
       <div className="w-full max-w-md bg-[#111827] border border-[#00F0FF]/20 rounded-2xl p-8 shadow-[0_0_15px_rgba(0,240,255,0.1)]">
         <div className="mb-8 text-center border-b border-[#00F0FF]/20 pb-4">
-          <h1 className="text-xl font-bold text-[#00F0FF] mb-2 tracking-widest">منظومة ZEX العسكرية // بروتوكول الدخول</h1>
+          <h1 className="text-xl font-bold text-[#00F0FF] mb-2 tracking-widest">?????? ZEX ???????? // ???????? ??????</h1>
           <p className="text-[#00FA9A] text-xs uppercase tracking-widest">TACTICAL OPS ACCESS PROTOCOL // V2.4</p>
         </div>
 
@@ -41,7 +41,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} method="POST" className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-[#00F0FF] mb-2 uppercase tracking-wider">OPERATOR CALL SIGN</label>
             <div className="relative">
@@ -88,7 +88,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full flex justify-center items-center py-3 px-4 border border-[#00F0FF]/50 rounded-lg shadow-[0_0_10px_rgba(0,240,255,0.2)] text-sm font-bold text-black bg-[#00F0FF] hover:bg-[#00FA9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0A0F16] focus:ring-[#00F0FF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors tracking-widest uppercase"
           >
-            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'AUTHENTICATE TERMINAL // دخول'}
+            {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'AUTHENTICATE TERMINAL // ????'}
           </button>
           
           <button
@@ -103,3 +103,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
