@@ -37,11 +37,11 @@ export default function DashboardClient() {
 
   function isDeviceOnline(d: any): boolean {
     if (!d) return false;
-    const lastSeen = d.last_heartbeat_at || d.last_seen_at || d.last_heartbeat;
+    const lastSeen = d.last_heartbeat_at || d.last_seen_at || d.updated_at || d.last_heartbeat;
     if (!lastSeen) return false;
     const t = new Date(lastSeen).getTime();
     if (isNaN(t) || t <= 0) return false;
-    return (now - t) < 60000;
+    return (now - t) < 120000;
   }
   const [device, setDevice] = useState<any>(null);
   const [devices, setDevices] = useState<any[]>([]);
@@ -138,18 +138,27 @@ export default function DashboardClient() {
   }
   const fetchDevices = () => fetchDevicesInner();
 
-  const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); } catch { alert('فشل GPS Locate'); } }, [device?.id]);
-  const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); fetchDevices(); } catch { alert('فشل التشغيل'); } };
+  const optimisticPing = () => {
+    if (!device) return;
+    const nowStr = new Date().toISOString();
+    setDevice((p: any) => p ? { ...p, last_heartbeat_at: nowStr, updated_at: nowStr } : null);
+    setRtState((p: any) => p ? { ...p, last_heartbeat_at: nowStr } : null);
+    setDevices((prev: any[]) => prev.map(d => d.id === device.id ? { ...d, last_heartbeat_at: nowStr, updated_at: nowStr } : d));
+    setNow(Date.now());
+  };
+
+  const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); optimisticPing(); } catch { alert('Failed to execute GPS Locate'); } }, [device?.id]);
+  const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to execute Scream Alert'); } };
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
-  const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); fetchDevices(); } catch { alert('Password غير صحيحة'); } finally { setActionLoading(false); } };
-  const handleStartSearch  = async () => { if (!device) return; try { await startSearchMode(device.id, 30); setDevice((p:any)=>({...p,is_searching:true})); setRtState((p:any)=>p?{...p,is_searching:true}:null); fetchDevices(); } catch { alert('فشل بدء البحث'); } };
-  const handleStopSearch   = async () => { if (!device) return; try { await stopSearchMode(device.id); setDevice((p:any)=>({...p,is_searching:false})); setRtState((p:any)=>p?{...p,is_searching:false}:null); fetchDevices(); } catch { alert('فشل Stop Radar'); } };
-  const handleStartStolen  = async () => { if (!device) return; try { await markStolen(device.id); setDevice((p:any)=>({...p,is_stolen:true})); setRtState((p:any)=>p?{...p,is_stolen:true}:null); fetchDevices(); } catch { alert('فشل تفعيل Mark Stolen'); } };
+  const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); optimisticPing(); fetchDevices(); } catch { alert('Invalid Password'); } finally { setActionLoading(false); } };
+  const handleStartSearch  = async () => { if (!device) return; try { await startSearchMode(device.id, 30); setDevice((p:any)=>({...p,is_searching:true})); setRtState((p:any)=>p?{...p,is_searching:true}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to execute BLE Radar'); } };
+  const handleStopSearch   = async () => { if (!device) return; try { await stopSearchMode(device.id); setDevice((p:any)=>({...p,is_searching:false})); setRtState((p:any)=>p?{...p,is_searching:false}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to stop BLE Radar'); } };
+  const handleStartStolen  = async () => { if (!device) return; try { await markStolen(device.id); setDevice((p:any)=>({...p,is_stolen:true})); setRtState((p:any)=>p?{...p,is_stolen:true}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to execute Lock Protocol'); } };
   const handleStopStolenClick = () => { if (!device) return; setShowPinModal(true); };
-  const handleMarkFound    = async () => { if (!device) return; setActionLoading(true); try { await markFound(device.id, pinInput.trim()); setShowPinModal(false); setPinInput(''); setDevice((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); setRtState((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); fetchDevices(); } catch { alert('رمز PIN غير صحيح'); } finally { setActionLoading(false); } };
+  const handleMarkFound    = async () => { if (!device) return; setActionLoading(true); try { await markFound(device.id, pinInput.trim()); setShowPinModal(false); setPinInput(''); setDevice((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); setRtState((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); optimisticPing(); fetchDevices(); } catch { alert('Invalid 6-digit PIN'); } finally { setActionLoading(false); } };
   const handleDeleteClick  = () => { if (!device) return; setShowDeleteModal(true); };
-  const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('فشل الWipe أو Password غير صحيحة'); } finally { setActionLoading(false); } };
-  const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Password غير صحيحة أو فشل الPurge'); } finally { setActionLoading(false); } };
+  const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
+  const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
 
   const commands = [
     { label: 'Scream Alert',    sub: 'Force Siren',      icon: <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'blue',    onClick: handleStartScream,    disabled: !!isScreaming || !device },

@@ -23,11 +23,11 @@ export default function DeviceDetailClient({ id }: { id: string }) {
 
   function isDeviceOnline(d: any): boolean {
     if (!d) return false;
-    const lastSeen = d.last_heartbeat_at || d.last_seen_at || d.last_heartbeat;
+    const lastSeen = d.last_heartbeat_at || d.last_seen_at || d.updated_at || d.last_heartbeat;
     if (!lastSeen) return false;
     const t = new Date(lastSeen).getTime();
     if (isNaN(t) || t <= 0) return false;
-    return (now - t) < 60000;
+    return (now - t) < 120000;
   }
 
   useEffect(() => {
