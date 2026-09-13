@@ -149,8 +149,8 @@ export default function DashboardPage() {
   const isSearching = statusObj.is_searching ?? device?.is_searching;
   const batteryLevel = statusObj.battery_level ?? device?.battery_level ?? 0;
 
-  const latitude = locObj.latitude ?? device?.last_location?.latitude;
-  const longitude = locObj.longitude ?? device?.last_location?.longitude;
+  const latitude = locObj.latitude ?? device?.last_location?.latitude ?? 24.7136;
+  const longitude = locObj.longitude ?? device?.last_location?.longitude ?? 46.6753;
   const accuracy = locObj.accuracy ?? device?.last_location?.accuracy;
   
   const lastHb = statusObj?.last_heartbeat_at || device?.last_heartbeat_at;
