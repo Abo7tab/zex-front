@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from 'next/dynamic';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const DashboardClient = dynamic(() => import('./DashboardClient'), {
   ssr: false,
@@ -37,5 +38,9 @@ const DashboardClient = dynamic(() => import('./DashboardClient'), {
 });
 
 export default function Page() {
-  return <DashboardClient />;
+  return (
+    <ErrorBoundary>
+      <DashboardClient />
+    </ErrorBoundary>
+  );
 }
