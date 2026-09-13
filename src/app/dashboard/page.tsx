@@ -210,7 +210,7 @@ export default function DashboardPage() {
       {/* Mobile Top Bar */}
       <div className="md:hidden absolute top-0 left-0 right-0 h-16 bg-white z-20 flex items-center justify-between px-4 border-b border-slate-200">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-white">Z</div>
+          <div className="w-8 h-8 bg-[#111827] rounded-xl flex items-center justify-center font-semibold text-white">Z</div>
           <span className="font-semibold text-sm">ZEX Military</span>
         </div>
         <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="p-2">
@@ -247,7 +247,7 @@ export default function DashboardPage() {
       <div className={`fixed md:relative top-16 md:top-0 left-0 w-full md:w-80 h-[calc(100%-4rem)] md:h-full bg-white z-20 border-r border-slate-200 flex-col justify-between p-6 shadow-lg transition-transform ${showMobileMenu ? 'flex' : 'hidden md:flex'}`}>
         <div>
           <div className="hidden md:flex items-center space-x-3 mb-8">
-            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center font-semibold text-xl text-white">Z</div>
+            <div className="w-10 h-10 bg-[#111827] rounded-xl flex items-center justify-center font-semibold text-xl text-white">Z</div>
             <span className="text-xl font-semibold tracking-tight text-slate-800">ZEX Military</span>
           </div>
 
@@ -451,7 +451,7 @@ export default function DashboardPage() {
 
       {/* D. Modals */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <VolumeX className="w-8 h-8" />
@@ -473,7 +473,7 @@ export default function DashboardPage() {
       )}
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash className="w-8 h-8" />
@@ -495,7 +495,7 @@ export default function DashboardPage() {
       )}
 
       {showPinModal && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <ShieldCheck className="w-8 h-8" />
@@ -512,7 +512,7 @@ export default function DashboardPage() {
       )}
 
       {showUnregisterModal && (
-        <div className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center">
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <Trash2 className="w-8 h-8" />

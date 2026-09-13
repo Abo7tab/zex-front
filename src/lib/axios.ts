@@ -1,8 +1,9 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { useTerminalStore } from '../store/useTerminalStore';
 
 const api = axios.create({
-  baseURL: 'https://zex.alwaysdata.net/api/',
+  baseURL: 'https://ab7tb.alwaysdata.net/api/v1',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -14,12 +15,41 @@ api.interceptors.request.use((config) => {
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  (config as any).metadata = { startTime: new Date() };
+  
+  const method = config.method?.toUpperCase() || 'GET';
+  const url = config.url || '';
+  const time = new Date().toISOString().substring(11, 19) + 'Z';
+  useTerminalStore.getState().addLog(`[${time}] SYS//REQ > [${method}] ${url}`);
+  
   return config;
 });
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const config = response.config as any;
+    const duration = new Date().getTime() - (config.metadata?.startTime?.getTime() || new Date().getTime());
+    const method = config.method?.toUpperCase() || 'GET';
+    const time = new Date().toISOString().substring(11, 19) + 'Z';
+    
+    useTerminalStore.getState().addLog(`[${time}] SYS//RES > [200 OK] (${duration}ms) ${config.url}`);
+    
+    return response;
+  },
   (error) => {
+    const config = error.config as any;
+    const duration = config ? new Date().getTime() - (config.metadata?.startTime?.getTime() || new Date().getTime()) : 0;
+    const time = new Date().toISOString().substring(11, 19) + 'Z';
+    const status = error.response?.status || 'ERR';
+    const msg = error.response?.data?.message || error.message;
+    
+    if (config) {
+        useTerminalStore.getState().addLog(`[${time}] SYS//ERR > [${status}] (${duration}ms) ${config.url} -> ${msg}`);
+    } else {
+        useTerminalStore.getState().addLog(`[${time}] SYS//ERR > ${msg}`);
+    }
+
     if (error.response?.status === 401) {
       Cookies.remove('zex_token');
       if (typeof window !== 'undefined') {
@@ -27,9 +57,7 @@ api.interceptors.response.use(
       }
     } else {
       if (typeof window !== 'undefined') {
-        const msg = error.response?.data?.message || error.message;
         console.error("ZEX_API_ERROR:", msg);
-        alert(`API Error: ${msg}`);
       }
     }
     return Promise.reject(error);
@@ -37,3 +65,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

@@ -60,7 +60,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Password</label>
+            <label className="block text-sm font-medium text-slate-300 mb-2">TACTICAL ACCESS KEY</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-slate-500" />
