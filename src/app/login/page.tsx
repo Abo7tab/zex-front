@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import api from '@/lib/axios';
+import { Shield, Smartphone, Crosshair, Key, Gauge, ShieldCheck, Lock, Network, LogIn, UserPlus, Mail, Eye, EyeOff, User, Phone, KeyRound, AlertTriangle, Radio } from 'lucide-react';
 
 export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false);
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   
-  // Register specific fields
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -42,7 +42,7 @@ export default function LoginPage() {
           pin_code: pinCode.trim(),
         };
 
-        const res = await axios.post('https://zex.alwaysdata.net/api/auth/register', payload);
+        const res = await api.post('/auth/register', payload);
         const token = res.data?.token || res.data?.access_token || res.data?.data?.token;
 
         if (token) {
@@ -60,7 +60,7 @@ export default function LoginPage() {
           password: password.trim() 
         };
 
-        const res = await axios.post('https://zex.alwaysdata.net/api/auth/login', payload);
+        const res = await api.post('/auth/login', payload);
         const token = res.data?.token || res.data?.access_token || res.data?.data?.token;
 
         if (token) {
@@ -93,30 +93,24 @@ export default function LoginPage() {
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-center items-center py-6 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white relative overflow-x-hidden font-sans" dir="rtl">
       
-      {/* Subtle Military Grid Background Pattern */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.035] bg-[radial-gradient(#1e3a8a_1px,transparent_1px)] [background-size:24px_24px]"></div>
       
-      {/* Top Global Security Bar */}
-      <header className="w-full max-w-7xl mx-auto flex items-center justify-between py-3 px-2 mb-4 text-xs font-semibold text-slate-500 z-10">
-        <div className="flex items-center gap-2">
+      <header className="w-full max-w-7xl mx-auto flex flex-row items-center justify-between py-3 px-2 mb-4 text-xs font-semibold text-slate-500 z-10">
+        <div className="flex flex-row items-center gap-2">
           <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100 animate-pulse"></span>
-          <span className="tracking-wide">الشبكة الدفاعية الموحدة C4ISR // مشفرة بنظام كوانتومي E2EE</span>
+          <span className="tracking-wide">الشبكة الدفاعية الموحدة C4ISR // مشفرة بنظام كوانتومي</span>
         </div>
-        <div className="hidden sm:flex items-center gap-4 font-mono text-[11px] text-slate-400">
-          <span>SERVER: SA-RIYADH-01</span>
-          <span>LATENCY: 12ms</span>
+        <div className="hidden sm:flex flex-row items-center gap-4 font-mono text-[11px] text-slate-400">
           <span className="text-blue-600 font-bold">STATUS: OPERATIONAL</span>
         </div>
       </header>
 
-      {/* Main Container: Two-Column Split Desktop Layout */}
       <main className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch z-10">
         
-        {/* Right Side (Desktop Hero & Dynamic Telemetry Display) - 6 cols */}
         <section className="lg:col-span-6 flex flex-col justify-between gap-6 order-2 lg:order-1 bg-gradient-to-b from-white to-slate-50/80 rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-md">
           <div className="flex flex-col gap-4">
-            <div className="inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs">
-              <span className="material-symbols-outlined text-sm text-blue-600" style={{fontVariationSettings: "'FILL' 1"}}>shield</span>
+            <div className="inline-flex flex-row items-center gap-2 self-start px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs">
+              <Shield className="w-4 h-4 text-blue-600" />
               <span>منظومة الدفاع والتحكم الميداني C4ISR</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug">
@@ -127,37 +121,36 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Dynamic Military Telemetry / Security Visual Card */}
           <div className="relative bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-xl overflow-hidden border border-slate-800">
             <div className="absolute -top-16 -left-16 w-48 h-48 bg-blue-600/30 rounded-full blur-3xl pointer-events-none"></div>
             <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div className="flex items-center justify-between gap-3 mb-5 border-b border-slate-800 pb-4 relative z-10">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-row items-center justify-between gap-3 mb-5 border-b border-slate-800 pb-4 relative z-10">
+              <div className="flex flex-row items-center gap-3">
                 <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-                  <span className="material-symbols-outlined text-2xl">phonelink_lock</span>
+                  <Smartphone className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="font-bold text-base text-slate-100 flex items-center gap-2">
+                  <div className="font-bold text-base text-slate-100 flex flex-row items-center gap-2">
                     <span>ZEX-Terminal Alpha</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono">NODE-09</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono" dir="ltr">NODE-09</span>
                   </div>
-                  <div className="text-xs text-slate-400 font-mono">معرف الوحدة: #TAC-9844-X</div>
+                  <div className="text-xs text-slate-400 font-mono" dir="ltr">#TAC-9844-X</div>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
+              <span className="inline-flex flex-row items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 قفل تكتيكي نشط
               </span>
             </div>
 
             <div className="relative bg-slate-950/70 border border-slate-800 rounded-xl p-4 mb-5 overflow-hidden">
-              <div className="flex items-center justify-between text-xs text-slate-300 font-mono mb-2">
-                <span className="flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-blue-400 text-base">satellite_alt</span>
-                  Galileo + GPS Ultra-Precision
+              <div className="flex flex-row items-center justify-between text-xs text-slate-300 font-mono mb-2">
+                <span className="flex flex-row items-center gap-1.5">
+                  <Crosshair className="w-4 h-4 text-blue-400" />
+                  <span dir="ltr">Galileo + GPS</span>
                 </span>
-                <span className="text-emerald-400 font-bold">99.8% مزامنة نشطة</span>
+                <span className="text-emerald-400 font-bold">مزامنة نشطة</span>
               </div>
               <div className="h-28 w-full flex items-center justify-center relative my-1">
                 <svg className="w-full h-full text-blue-500/30" fill="none" preserveAspectRatio="none" viewBox="0 0 320 80">
@@ -166,9 +159,9 @@ export default function LoginPage() {
                   <circle className="fill-blue-400" cx="190" cy="23" r="4.5"></circle>
                   <circle className="text-blue-400 animate-ping" cx="190" cy="23" r="10" stroke="currentColor" strokeWidth="1.5"></circle>
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="bg-slate-900/90 text-slate-200 border border-slate-700/80 px-3.5 py-1 rounded-full text-xs font-medium shadow backdrop-blur-sm">
-                    تم قفل الإحداثيات الجغرافية بدقة فائقة: 24.7136° N, 46.6753° E
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="bg-slate-900/90 text-slate-200 border border-slate-700/80 px-3.5 py-1 rounded-full text-xs font-medium shadow backdrop-blur-sm" dir="ltr">
+                    24.7136° N, 46.6753° E
                   </span>
                 </div>
               </div>
@@ -176,67 +169,66 @@ export default function LoginPage() {
 
             <div className="grid grid-cols-3 gap-3 font-mono text-center">
               <div className="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex flex-col items-center gap-0.5">
-                <span className="text-[11px] text-slate-400 font-sans flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs text-emerald-400">my_location</span>
+                <span className="text-[11px] text-slate-400 font-sans flex flex-row items-center justify-center gap-1 w-full">
+                  <Crosshair className="w-3 h-3 text-emerald-400" />
                   دقة التحديد
                 </span>
-                <span className="text-lg font-bold text-white">4 أمتار</span>
-                <span className="text-[10px] text-emerald-400">Dual GPS/GAL</span>
+                <span className="text-lg font-bold text-white">4m</span>
+                <span className="text-[10px] text-emerald-400">Dual GPS</span>
               </div>
               <div className="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex flex-col items-center gap-0.5">
-                <span className="text-[11px] text-slate-400 font-sans flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs text-blue-400">vpn_key</span>
+                <span className="text-[11px] text-slate-400 font-sans flex flex-row items-center justify-center gap-1 w-full">
+                  <Key className="w-3 h-3 text-blue-400" />
                   قناة التشفير
                 </span>
-                <span className="text-lg font-bold text-white">AES-256</span>
-                <span className="text-[10px] text-blue-400">Quantum E2EE</span>
+                <span className="text-lg font-bold text-white">AES</span>
+                <span className="text-[10px] text-blue-400">Quantum</span>
               </div>
               <div className="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex flex-col items-center gap-0.5">
-                <span className="text-[11px] text-slate-400 font-sans flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs text-amber-400">speed</span>
-                  زمن الاستجابة
+                <span className="text-[11px] text-slate-400 font-sans flex flex-row items-center justify-center gap-1 w-full">
+                  <Gauge className="w-3 h-3 text-amber-400" />
+                  الاستجابة
                 </span>
-                <span className="text-lg font-bold text-white">12 ms</span>
+                <span className="text-lg font-bold text-white">12ms</span>
                 <span className="text-[10px] text-amber-400">استجابة صفرية</span>
               </div>
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm text-emerald-400" style={{fontVariationSettings: "'FILL' 1"}}>verified</span>
-                <span>معتمد ISO-27001 Security</span>
+              <div className="flex flex-row items-center gap-1.5">
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span>ISO-27001</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm text-blue-400">lock_clock</span>
-                <span>Zero-Trust Protocol V4</span>
+              <div className="flex flex-row items-center gap-1.5">
+                <Lock className="w-3 h-3 text-blue-400" />
+                <span>Zero-Trust V4</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm text-slate-300">hub</span>
-                <span>Military Grid Ready</span>
+              <div className="flex flex-row items-center gap-1.5">
+                <Network className="w-3 h-3 text-slate-300" />
+                <span>Military Grid</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-200/60">
-            <span>نسخة النظام: C4ISR Core v4.8.2</span>
-            <span>جميع الحقوق محفوظة © ZEX Defense Systems</span>
+          <div className="flex flex-row items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-200/60">
+            <span>C4ISR Core v4.8.2</span>
+            <span>© ZEX Defense Systems</span>
           </div>
         </section>
 
-        {/* Left Side (Auth Card & Observability UI) - 6 cols */}
         <section className="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-md flex flex-col justify-between gap-6 order-1 lg:order-2 relative">
           
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-5">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-row items-center justify-between gap-3 border-b border-slate-100 pb-5">
+            <div className="flex flex-row items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/25">
-                <span className="material-symbols-outlined text-2xl" style={{fontVariationSettings: "'FILL' 1"}}>military_tech</span>
+                <Shield className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
                 <span className="font-extrabold text-lg text-slate-900 tracking-tight leading-tight">ZEX MILITARY</span>
                 <span className="text-xs font-semibold text-slate-500">C4ISR Security Systems</span>
               </div>
             </div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
+            <div className="inline-flex flex-row items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>نظام الحماية الفوري نشط</span>
             </div>
@@ -244,18 +236,18 @@ export default function LoginPage() {
 
           <div className="flex flex-col gap-3">
             {error && (
-              <div className="flex items-start justify-between gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 shadow-sm transition-all duration-300">
-                <div className="flex items-start gap-3">
-                  <span className="material-symbols-outlined text-red-600 text-xl flex-shrink-0 mt-0.5">error</span>
+              <div className="flex flex-row items-start justify-between gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 shadow-sm transition-all duration-300">
+                <div className="flex flex-row items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-sm text-red-900">خطأ في النظام</span>
+                    <span className="font-bold text-sm text-red-900">تنبيه النظام</span>
                     <p className="text-xs text-red-700 leading-relaxed">
                       {error}
                     </p>
                   </div>
                 </div>
                 <button onClick={() => setError('')} className="text-red-500 hover:text-red-800 p-1 rounded-lg hover:bg-red-100/60 transition-colors" type="button">
-                  <span className="material-symbols-outlined text-lg">close</span>
+                  <EyeOff className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -264,15 +256,15 @@ export default function LoginPage() {
           <div className="p-1 bg-slate-100 rounded-2xl grid grid-cols-2 gap-1 text-sm font-bold">
             <button 
               onClick={() => toggleAuthMode('login')} 
-              className={`py-2.5 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-1.5 ${!isRegister ? 'bg-white text-blue-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-800'}`} type="button">
-              <span className="material-symbols-outlined text-lg">login</span>
+              className={`py-2.5 rounded-xl transition-all duration-200 text-center flex flex-row items-center justify-center gap-1.5 ${!isRegister ? 'bg-white text-blue-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-800'}`} type="button">
+              <LogIn className="w-4 h-4" />
               <span>تسجيل الدخول</span>
             </button>
             <button 
               onClick={() => toggleAuthMode('register')} 
-              className={`py-2.5 rounded-xl transition-all duration-200 text-center flex items-center justify-center gap-1.5 ${isRegister ? 'bg-white text-blue-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-800'}`} type="button">
-              <span className="material-symbols-outlined text-lg">person_add</span>
-              <span>إنشاء حساب جديد</span>
+              className={`py-2.5 rounded-xl transition-all duration-200 text-center flex flex-row items-center justify-center gap-1.5 ${isRegister ? 'bg-white text-blue-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-800'}`} type="button">
+              <UserPlus className="w-4 h-4" />
+              <span>إنشاء حساب</span>
             </button>
           </div>
 
@@ -280,12 +272,11 @@ export default function LoginPage() {
             {!isRegister ? (
               <>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                    <span>البريد الإلكتروني للمشغل</span>
-                    <span className="text-[11px] text-slate-400 font-normal">نطاق عسكري معتمد (.gov / .mil)</span>
+                  <label className="text-xs font-bold text-slate-700 flex flex-row items-center justify-between">
+                    <span>البريد الإلكتروني</span>
                   </label>
                   <div className="relative flex items-center">
-                    <span className="material-symbols-outlined absolute right-3.5 text-slate-400 text-xl pointer-events-none">mail</span>
+                    <Mail className="absolute right-3.5 text-slate-400 w-5 h-5 pointer-events-none" />
                     <input 
                       type="email" 
                       required 
@@ -293,16 +284,16 @@ export default function LoginPage() {
                       onChange={(e) => setIdentifier(e.target.value)}
                       className="w-full h-11 pr-11 pl-4 rounded-xl bg-slate-50 border border-slate-300/80 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-600/10 transition-all shadow-sm text-left" 
                       dir="ltr"
-                      placeholder="operator@c4isr.defense.gov" />
+                      placeholder="operator@c4isr.gov" />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700">كلمة المرور الحصينة</label>
+                  <div className="flex flex-row items-center justify-between">
+                    <label className="text-xs font-bold text-slate-700">كلمة المرور</label>
                   </div>
                   <div className="relative flex items-center">
-                    <span className="material-symbols-outlined absolute right-3.5 text-slate-400 text-xl pointer-events-none">lock</span>
+                    <Lock className="absolute right-3.5 text-slate-400 w-5 h-5 pointer-events-none" />
                     <input 
                       type={showPassword ? "text" : "password"} 
                       required 
@@ -312,7 +303,7 @@ export default function LoginPage() {
                       dir="ltr"
                       placeholder="••••••••••••" />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-3 text-slate-400 hover:text-slate-700 p-1 flex items-center justify-center transition-colors">
-                      <span className="material-symbols-outlined text-lg">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
@@ -321,56 +312,56 @@ export default function LoginPage() {
               <div className="flex flex-col gap-3.5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">الاسم الكامل للمشغل</label>
+                    <label className="text-xs font-bold text-slate-700">الاسم</label>
                     <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute right-3 text-slate-400 text-lg pointer-events-none">badge</span>
-                      <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="الاسم الرباعي" />
+                      <User className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="الاسم" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">رقم هاتف الطوارئ</label>
+                    <label className="text-xs font-bold text-slate-700">الهاتف</label>
                     <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute right-3 text-slate-400 text-lg pointer-events-none">call</span>
-                      <input type="tel" dir="ltr" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full h-10 pr-9 pl-3 text-left rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="+966 50 000 0000" />
+                      <Phone className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type="tel" dir="ltr" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full h-10 pr-9 pl-3 text-left rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="+966" />
                     </div>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">البريد الإلكتروني للتقارير</label>
+                    <label className="text-xs font-bold text-slate-700">البريد الإلكتروني</label>
                     <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute right-3 text-slate-400 text-lg pointer-events-none">mark_email_read</span>
+                      <Mail className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
                       <input type="email" dir="ltr" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm text-left" placeholder="unit@mod.gov" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">رمز أمان الطوارئ (PIN)</label>
+                    <label className="text-xs font-bold text-slate-700">رمز الأمان (PIN)</label>
                     <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute right-3 text-slate-400 text-lg pointer-events-none">pin</span>
-                      <input type="password" required maxLength={6} pattern="[0-9]{6}" value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="6 أرقام سرية" />
+                      <KeyRound className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type="password" required maxLength={6} pattern="[0-9]{6}" value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="6 أرقام" />
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">كلمة المرور الرئيسية</label>
+                    <label className="text-xs font-bold text-slate-700">كلمة المرور</label>
                     <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute right-3 text-slate-400 text-lg pointer-events-none">shield_locked</span>
-                      <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full h-10 pr-9 pl-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
+                      <Lock className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full h-10 pr-9 pl-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-2.5 text-slate-400 hover:text-slate-700 flex items-center">
-                        <span className="material-symbols-outlined text-base">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">تأكيد كلمة المرور</label>
+                    <label className="text-xs font-bold text-slate-700">تأكيد المرور</label>
                     <div className="relative flex items-center">
-                      <span className="material-symbols-outlined absolute right-3 text-slate-400 text-lg pointer-events-none">lock_reset</span>
-                      <input type={showPassword ? "text" : "password"} required value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} className="w-full h-10 pr-9 pl-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
+                      <Lock className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
+                      <input type={showPassword ? "text" : "password"} required value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} className="w-full h-10 pr-9 pl-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-2.5 text-slate-400 hover:text-slate-700 flex items-center">
-                        <span className="material-symbols-outlined text-base">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
@@ -379,45 +370,44 @@ export default function LoginPage() {
             )}
 
             {!isRegister && (
-              <div className="flex items-center justify-between text-xs text-slate-600 py-1">
-                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+              <div className="flex flex-row items-center justify-between text-xs text-slate-600 py-1">
+                <label className="inline-flex flex-row items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300" />
-                  <span>تذكر هذا المتصفح الموثوق لمدة 30 يوماً</span>
+                  <span>تذكر الجهاز</span>
                 </label>
-                <span className="text-[11px] text-slate-400">Zero-Trust V4</span>
               </div>
             )}
 
-            <button type="submit" disabled={loading} className="w-full h-12 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed">
+            <button type="submit" disabled={loading} className="w-full h-12 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-600/25 flex flex-row items-center justify-center gap-2 transition-all duration-150 active:scale-[0.99] disabled:opacity-75 disabled:cursor-not-allowed">
               {loading ? (
                 <>
                   <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>جاري التحقق والمصادقة الميدانية...</span>
+                  <span>جاري التحقق...</span>
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-xl">{isRegister ? 'person_add' : 'vpn_key'}</span>
-                  <span>{isRegister ? 'إنشاء حساب مشغل جديد' : 'دخول آمن إلى لوحة الحراسة'}</span>
+                  {isRegister ? <UserPlus className="w-5 h-5" /> : <Key className="w-5 h-5" />}
+                  <span>{isRegister ? 'إنشاء حساب' : 'دخول آمن'}</span>
                 </>
               )}
             </button>
           </form>
 
-          <div className="rounded-2xl p-3.5 bg-rose-50 border border-rose-200 text-rose-900 shadow-sm flex items-center justify-between gap-3 mt-4">
-            <div className="flex items-center gap-2.5">
+          <div className="rounded-2xl p-3.5 bg-rose-50 border border-rose-200 text-rose-900 shadow-sm flex flex-row items-center justify-between gap-3 mt-4">
+            <div className="flex flex-row items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-xl animate-pulse">crisis_alert</span>
+                <AlertTriangle className="w-5 h-5 animate-pulse" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-rose-900">طوارئ قصوى؟</span>
-                <span className="text-[11px] text-rose-700">تجاوز الأمان الفوري (SOS Emergency Override)</span>
+                <span className="text-[11px] text-rose-700">SOS Emergency Override</span>
               </div>
             </div>
-            <button type="button" onClick={() => alert('تم إرسال نداء الاستغاثة بنجاح لكافة الوحدات!')} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1 flex-shrink-0">
-              <span className="material-symbols-outlined text-sm">emergency_share</span>
+            <button type="button" onClick={() => alert('تم إرسال نداء الاستغاثة بنجاح لكافة الوحدات!')} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex flex-row items-center gap-1 flex-shrink-0">
+              <Radio className="w-4 h-4" />
               <span>تفعيل SOS</span>
             </button>
           </div>

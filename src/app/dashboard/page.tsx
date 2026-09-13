@@ -5,8 +5,22 @@ import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
 import { useTerminalStore } from '@/store/useTerminalStore';
-import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth, Settings, Eye, EyeOff, Sliders } from 'lucide-react';
-import DeviceMap from '@/components/map/DeviceMap';
+import { 
+  Shield, User, Smartphone, Search, AlertTriangle, ShieldCheck, 
+  Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings, 
+  Eye, EyeOff, LogOut, Radar, MapPin, Crosshair, Key, Gauge,
+  Network, Lock, Bluetooth, BluetoothSearching, CheckCircle,
+  Terminal, ShieldAlert
+} from 'lucide-react';
+import dynamic from 'next/dynamic';
+const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs">
+      جاري تحميل الخريطة التكتيكية...
+    </div>
+  )
+});
 import SettingsModal from '@/components/modals/SettingsModal';
 import { useRouter } from 'next/navigation';
 
@@ -120,27 +134,15 @@ export default function DashboardPage() {
     }
   }, [latitude, longitude]);
 
-  const handleLocate = async () => {
+  // Command Matrix Action Handlers
+  const handleStartScream = async () => {
     if (!device) return;
-    try { await locateDevice(device.id); } catch(e) { alert('فشل تحديد الموقع'); }
+    try { await screamDevice(device.id); setDevice((p: any) => ({...p, is_screaming: true})); setRtState((p: any) => p ? {...p, is_screaming: true} : null); fetchDevices(); } catch(e) { alert('فشل التشغيل'); }
   };
 
-  const toggleSearch = async () => {
+  const handleStopScreamClick = () => {
     if (!device) return;
-    try {
-      if (isSearching) { await stopSearchMode(device.id); setDevice((p: any) => ({...p, is_searching: false})); setRtState((p: any) => p ? {...p, is_searching: false} : null); }
-      else { await startSearchMode(device.id, 30); setDevice((p: any) => ({...p, is_searching: true})); setRtState((p: any) => p ? {...p, is_searching: true} : null); }
-      fetchDevices();
-    } catch(e) { alert('فشل تغيير وضع البحث'); }
-  };
-
-  const handleScreamToggle = async () => {
-    if (!device) return;
-    if (isScreaming) {
-      setShowPasswordModal(true);
-    } else {
-      try { await screamDevice(device.id); setDevice((p: any) => ({...p, is_screaming: true})); setRtState((p: any) => p ? {...p, is_screaming: true} : null); fetchDevices(); } catch(e) { alert('فشل التشغيل'); }
-    }
+    setShowPasswordModal(true);
   };
 
   const handleStopScream = async () => {
@@ -155,6 +157,50 @@ export default function DashboardPage() {
       fetchDevices();
     } catch(e) { alert('كلمة المرور غير صحيحة'); }
     finally { setActionLoading(false); }
+  };
+
+  const handleLocate = async () => {
+    if (!device) return;
+    try { await locateDevice(device.id); } catch(e) { alert('فشل تحديد الموقع'); }
+  };
+
+  const handleStartSearch = async () => {
+    if (!device) return;
+    try { await startSearchMode(device.id, 30); setDevice((p: any) => ({...p, is_searching: true})); setRtState((p: any) => p ? {...p, is_searching: true} : null); fetchDevices(); } catch(e) { alert('فشل بدء البحث'); }
+  };
+
+  const handleStopSearch = async () => {
+    if (!device) return;
+    try { await stopSearchMode(device.id); setDevice((p: any) => ({...p, is_searching: false})); setRtState((p: any) => p ? {...p, is_searching: false} : null); fetchDevices(); } catch(e) { alert('فشل إيقاف البحث'); }
+  };
+
+  const handleStartStolen = async () => {
+    if (!device) return;
+    try { await markStolen(device.id); setDevice((p: any) => ({...p, is_stolen: true})); setRtState((p: any) => p ? {...p, is_stolen: true} : null); fetchDevices(); } catch(e) { alert('فشل تفعيل وضع السرقة'); }
+  };
+
+  const handleStopStolenClick = () => {
+    if (!device) return;
+    setShowPinModal(true);
+  };
+
+  const handleMarkFound = async () => {
+    if (!device) return;
+    setActionLoading(true);
+    try {
+      await markFound(device.id, pinInput.trim());
+      setShowPinModal(false);
+      setPinInput('');
+      setDevice((prev: any) => prev ? { ...prev, is_stolen: false, is_screaming: false, is_searching: false } : null);
+      setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_stolen: false, is_screaming: false, is_searching: false }, is_stolen: false, is_screaming: false, is_searching: false } : null);
+      fetchDevices();
+    } catch(e) { alert('رمز PIN غير صحيح'); }
+    finally { setActionLoading(false); }
+  };
+
+  const handleDeleteClick = () => {
+    if (!device) return;
+    setShowDeleteModal(true);
   };
 
   const handleDeleteDevice = async () => {
@@ -188,29 +234,6 @@ export default function DashboardPage() {
     setActionLoading(false);
   };
 
-  const handleStolenToggle = async () => {
-    if (!device) return;
-    if (isStolen) {
-      setShowPinModal(true);
-    } else {
-      try { await markStolen(device.id); setDevice((p: any) => ({...p, is_stolen: true})); setRtState((p: any) => p ? {...p, is_stolen: true} : null); fetchDevices(); } catch(e) { alert('فشل التشغيل'); }
-    }
-  };
-
-  const handleMarkFound = async () => {
-    if (!device) return;
-    setActionLoading(true);
-    try {
-      await markFound(device.id, pinInput.trim());
-      setShowPinModal(false);
-      setPinInput('');
-      setDevice((prev: any) => prev ? { ...prev, is_stolen: false, is_screaming: false, is_searching: false } : null);
-      setRtState((prev: any) => prev ? { ...prev, status: { ...prev?.status, is_stolen: false, is_screaming: false, is_searching: false }, is_stolen: false, is_screaming: false, is_searching: false } : null);
-      fetchDevices();
-    } catch(e) { alert('رمز PIN غير صحيح'); }
-    finally { setActionLoading(false); }
-  };
-
   const filteredDevices = devices.filter(d => 
     d.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
     d.model?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -225,18 +248,18 @@ export default function DashboardPage() {
       {/* Sidebar: Devices & Operator Intel */}
       <aside className="w-80 bg-white border-l border-slate-200/80 shadow-md hidden lg:flex flex-col z-20 h-screen relative shrink-0">
         <div className="p-5 border-b border-slate-100 flex flex-col gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-row items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/25 shrink-0">
-              <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>military_tech</span>
+              <Shield className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-base text-slate-900 tracking-tight leading-tight">ZEX MILITARY</span>
               <span className="text-[10px] font-semibold text-slate-500 tracking-wider">SECURE OPERATIONS</span>
             </div>
           </div>
-          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center gap-3">
+          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex flex-row items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 shrink-0">
-              <span className="material-symbols-outlined text-base">person</span>
+              <User className="w-4 h-4" />
             </div>
             <div className="flex flex-col overflow-hidden">
               <span className="font-bold text-xs text-slate-800 truncate">{user?.name || 'Operator Alpha'}</span>
@@ -246,16 +269,16 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-            <span className="flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-blue-600">devices</span>
+          <div className="flex flex-row items-center justify-between text-xs font-bold text-slate-700">
+            <span className="flex flex-row items-center gap-1.5">
+              <Smartphone className="w-4 h-4 text-blue-600" />
               الوحدات النشطة
             </span>
             <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px]">{devices.length} مقترن</span>
           </div>
 
           <div className="relative shrink-0">
-            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none">search</span>
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
             <input 
               type="text" 
               placeholder="البحث عن عقدة..." 
@@ -272,17 +295,17 @@ export default function DashboardPage() {
                 onClick={() => setDevice(d)}
                 className={`p-3 rounded-xl border transition-all cursor-pointer ${device?.id === d.id ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`material-symbols-outlined text-base ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`}>smartphone</span>
+                <div className="flex flex-row items-center justify-between mb-2">
+                  <div className="flex flex-row items-center gap-2">
+                    <Smartphone className={`w-4 h-4 ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`} />
                     <span className={`font-bold text-xs ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>{d.name}</span>
                   </div>
                   {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>}
                 </div>
-                <div className="flex items-center justify-between text-[10px] font-mono">
+                <div className="flex flex-row items-center justify-between text-[10px] font-mono">
                   <span className={`${device?.id === d.id ? 'text-blue-600' : 'text-slate-500'} truncate mr-2`}>{d.model}</span>
-                  <span className={`px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 ${d.battery_level > 20 ? (device?.id === d.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600') : 'bg-rose-100 text-rose-700'}`}>
-                    <span className="material-symbols-outlined text-[10px]">{d.battery_level > 20 ? 'battery_charging_full' : 'battery_alert'}</span>
+                  <span className={`px-1.5 py-0.5 rounded flex flex-row items-center gap-1 shrink-0 ${d.battery_level > 20 ? (device?.id === d.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600') : 'bg-rose-100 text-rose-700'}`}>
+                    <Battery className="w-3 h-3" />
                     {d.battery_level ?? 0}%
                   </span>
                 </div>
@@ -294,12 +317,12 @@ export default function DashboardPage() {
         </div>
 
         <div className="p-4 border-t border-slate-100 flex flex-col gap-2 shrink-0 bg-slate-50/50">
-          <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors py-2 px-3 hover:bg-white rounded-lg hover:shadow-sm">
-            <span className="material-symbols-outlined text-lg">settings</span>
+          <button onClick={() => setIsSettingsOpen(true)} className="flex flex-row items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 transition-colors py-2 px-3 hover:bg-white rounded-lg hover:shadow-sm">
+            <Settings className="w-4 h-4" />
             إعدادات النظام
           </button>
-          <button onClick={() => { logout(); router.push('/login'); }} className="flex items-center gap-2 text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors py-2 px-3 hover:bg-white rounded-lg hover:shadow-sm">
-            <span className="material-symbols-outlined text-lg">logout</span>
+          <button onClick={() => { logout(); router.push('/login'); }} className="flex flex-row items-center gap-2 text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors py-2 px-3 hover:bg-white rounded-lg hover:shadow-sm">
+            <LogOut className="w-4 h-4" />
             تسجيل الخروج
           </button>
         </div>
@@ -309,30 +332,30 @@ export default function DashboardPage() {
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         
         {/* Top Command Header */}
-        <header className="h-16 bg-white border-b border-slate-200/80 shadow-sm flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="lg:hidden flex items-center gap-3">
+        <header className="h-16 bg-white border-b border-slate-200/80 shadow-sm flex flex-row items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+          <div className="flex flex-row items-center gap-4">
+            <div className="lg:hidden flex flex-row items-center gap-3">
               <button onClick={() => setShowMobileMenu(!showMobileMenu)} className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100">
-                 <span className="material-symbols-outlined text-sm">{showMobileMenu ? 'close' : 'menu'}</span>
+                 {showMobileMenu ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
               </button>
               <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md">
-                <span className="material-symbols-outlined text-sm">military_tech</span>
+                <Shield className="w-4 h-4" />
               </div>
             </div>
             
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono">
-              <span className="material-symbols-outlined text-emerald-500 text-sm">radar</span>
+            <div className="flex flex-row items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono">
+              <Radar className="w-4 h-4 text-emerald-500" />
               <span className="text-slate-600 hidden sm:inline-block">NODE:</span>
               <span className="font-bold text-slate-900">{device?.device_uid || 'WAITING...'}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-1.5 text-xs font-bold cursor-pointer hover:bg-rose-100 transition-colors" onClick={() => alert('SOS BROADCAST SENT')}>
-              <span className="material-symbols-outlined text-sm animate-pulse">crisis_alert</span>
+          <div className="flex flex-row items-center gap-3">
+            <div className="hidden sm:flex flex-row items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-1.5 text-xs font-bold cursor-pointer hover:bg-rose-100 transition-colors" onClick={() => alert('SOS BROADCAST SENT')}>
+              <AlertTriangle className="w-4 h-4 animate-pulse" />
               <span>EMERGENCY SOS</span>
             </div>
-            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-3 py-1.5 text-xs font-bold">
+            <div className="flex flex-row items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-3 py-1.5 text-xs font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="hidden sm:inline-block">SYSTEM</span> ONLINE
             </div>
@@ -343,9 +366,9 @@ export default function DashboardPage() {
           
           {/* Operational DEFCON Banner */}
           <div className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border shadow-sm ${isStolen ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50/50 border-blue-200/60 text-blue-900'}`}>
-            <div className="flex items-center gap-3.5">
+            <div className="flex flex-row items-center gap-3.5">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isStolen ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                <span className={`material-symbols-outlined text-xl ${isStolen ? 'animate-pulse' : ''}`}>{isStolen ? 'warning' : 'gpp_good'}</span>
+                {isStolen ? <AlertTriangle className="w-5 h-5 animate-pulse" /> : <ShieldCheck className="w-5 h-5" />}
               </div>
               <div className="flex flex-col gap-0.5">
                 <span className="font-bold text-sm sm:text-base">
@@ -356,7 +379,7 @@ export default function DashboardPage() {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4 font-mono text-[10px] sm:text-xs">
+            <div className="flex flex-row items-center gap-2 sm:gap-4 font-mono text-[10px] sm:text-xs">
               <div className="flex flex-col items-end">
                 <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>تشفير القناة</span>
                 <span className="font-bold">AES-256 E2EE</span>
@@ -364,7 +387,7 @@ export default function DashboardPage() {
               <div className="w-px h-8 bg-slate-200/80"></div>
               <div className="flex flex-col items-end">
                 <span className={`${isStolen ? 'text-red-600' : 'text-slate-400'}`}>بروتوكول الربط</span>
-                <span className="font-bold text-emerald-600 flex items-center gap-1">
+                <span className="font-bold text-emerald-600 flex flex-row items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   نشط
                 </span>
@@ -393,7 +416,7 @@ export default function DashboardPage() {
               <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.03)] z-10"></div>
               
               {/* Reticle / Crosshair Overlay (Visual Only) */}
-              <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-30 mix-blend-overlay">
+              <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center opacity-30 mix-blend-overlay">
                 <div className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] border border-blue-500 rounded-full flex items-center justify-center relative">
                   <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] border border-emerald-500/50 rounded-full border-dashed animate-[spin_30s_linear_infinite]"></div>
                   <div className="w-full h-px bg-blue-500/50 absolute top-1/2 -translate-y-1/2"></div>
@@ -403,27 +426,25 @@ export default function DashboardPage() {
               </div>
 
               {/* Floating Top HUD Metrics */}
-              <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
+              <div className="absolute top-4 left-4 right-4 z-20 flex flex-row justify-between items-start pointer-events-none">
                 <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1 font-mono text-[10px]">
-                  <div className="flex items-center gap-2 text-slate-700 font-bold">
-                    <span className="material-symbols-outlined text-xs text-blue-600">satellite_alt</span>
+                  <div className="flex flex-row items-center gap-2 text-slate-700 font-bold">
+                    <MapPin className="w-3 h-3 text-blue-600" />
                     <span>{latitude ? latitude.toFixed(6) : 'N/A'}, {longitude ? longitude.toFixed(6) : 'N/A'}</span>
                   </div>
-                  <div className="text-slate-500 flex items-center gap-1 text-[9px]">
-                    <span className="material-symbols-outlined text-[10px]">my_location</span>
+                  <div className="text-slate-500 flex flex-row items-center gap-1 text-[9px]">
+                    <Crosshair className="w-3 h-3" />
                     دقة التحديد: ±{accuracy || 0}m
                   </div>
                 </div>
                 
                 <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1.5 font-mono text-[10px] items-end">
-                  <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+                  <div className="flex flex-row items-center gap-1.5 text-slate-700 font-bold">
                     <span>{batteryLevel}%</span>
-                    <span className={`material-symbols-outlined text-xs ${batteryLevel > 20 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                      {batteryLevel > 20 ? 'battery_charging_full' : 'battery_alert'}
-                    </span>
+                    <Battery className={`w-3 h-3 ${batteryLevel > 20 ? 'text-emerald-500' : 'text-rose-500'}`} />
                   </div>
-                  <div className={`flex items-center gap-1 text-[9px] ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    <span className="material-symbols-outlined text-[10px]">wifi_tethering</span>
+                  <div className={`flex flex-row items-center gap-1 text-[9px] ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <Wifi className="w-3 h-3" />
                     {isOnline ? 'متصل بالشبكة' : 'غير متصل'}
                   </div>
                 </div>
@@ -431,8 +452,8 @@ export default function DashboardPage() {
 
               {/* Geofence / Status Badge */}
               <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
-                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg shadow-sm font-bold text-[10px] flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-xs">shield</span>
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg shadow-sm font-bold text-[10px] flex flex-row items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3" />
                   نطاق جغرافي آمن
                 </div>
               </div>
@@ -442,9 +463,9 @@ export default function DashboardPage() {
           {/* Strict Command Matrix (8 Buttons EXACTLY as requested) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 shrink-0">
             {/* 1. Scream */}
-            <button onClick={handleScreamToggle} disabled={isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={handleStartScream} disabled={isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">volume_up</span>
+                <Volume2 className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">إطلاق إنذار صاخب</span>
@@ -453,9 +474,9 @@ export default function DashboardPage() {
             </button>
 
             {/* 2. Stop Scream */}
-            <button onClick={() => setShowPasswordModal(true)} disabled={!isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={handleStopScreamClick} disabled={!isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">volume_off</span>
+                <VolumeX className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">إيقاف الإنذار</span>
@@ -466,7 +487,7 @@ export default function DashboardPage() {
             {/* 3. Locate GPS */}
             <button onClick={handleLocate} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">my_location</span>
+                <MapPin className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">تحديد الموقع (GPS)</span>
@@ -474,21 +495,32 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 4. BLE Search */}
-            <button onClick={toggleSearch} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${isSearching ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-indigo-50 text-indigo-600'}`}>
-                <span className={`material-symbols-outlined text-2xl ${isSearching ? 'animate-spin' : ''}`}>bluetooth_searching</span>
+            {/* 4. Start Search Mode */}
+            <button onClick={handleStartSearch} disabled={isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <BluetoothSearching className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-800">{isSearching ? 'البحث قيد التشغيل' : 'بدء البحث المحيطي (BLE)'}</span>
-                <span className="text-[10px] text-slate-500">Radar Mode 📶</span>
+                <span className="font-bold text-xs text-slate-800">بدء البحث (BLE)</span>
+                <span className="text-[10px] text-slate-500">Start Radar 📶</span>
               </div>
             </button>
 
-            {/* 5. Mark Stolen */}
-            <button onClick={handleStolenToggle} disabled={isStolen || !device} className="bg-white rounded-2xl p-4 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+            {/* 5. Stop Search Mode */}
+            <button onClick={handleStopSearch} disabled={!isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Bluetooth className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-xs text-slate-800">إيقاف البحث</span>
+                <span className="text-[10px] text-slate-500">Stop Radar 🛑</span>
+              </div>
+            </button>
+
+            {/* 6. Mark Stolen */}
+            <button onClick={handleStartStolen} disabled={isStolen || !device} className="bg-white rounded-2xl p-4 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">gpp_bad</span>
+                <ShieldAlert className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-rose-700">وضع السرقة</span>
@@ -496,21 +528,10 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 6. Lock Device */}
-            <button onClick={() => alert('LOCK INITIATED')} disabled={!device} className="bg-white rounded-2xl p-4 border border-amber-200/80 shadow-sm hover:shadow-md hover:border-amber-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
-              <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">lock</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-amber-700">قفل وتأمين الهاتف</span>
-                <span className="text-[10px] text-amber-500/80">Secure Lock 🔒</span>
-              </div>
-            </button>
-
             {/* 7. Mark Found */}
-            <button onClick={() => setShowPinModal(true)} disabled={!isStolen || !device} className="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={handleStopStolenClick} disabled={!isStolen || !device} className="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">gpp_good</span>
+                <CheckCircle className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-emerald-700">إلغاء وضع السرقة</span>
@@ -519,12 +540,12 @@ export default function DashboardPage() {
             </button>
 
             {/* 8. Delete Device */}
-            <button onClick={() => setShowDeleteModal(true)} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={handleDeleteClick} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-2xl">delete_forever</span>
+                <Trash2 className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-xs text-slate-700">مسح الجهاز من النظام</span>
+                <span className="font-bold text-xs text-slate-700">مسح الجهاز</span>
                 <span className="text-[10px] text-slate-500/80">Wipe & Delete 🗑️</span>
               </div>
             </button>
@@ -534,12 +555,12 @@ export default function DashboardPage() {
           <div className="bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-64 flex flex-col relative z-10 overflow-hidden mb-6 shrink-0">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-emerald-400 to-transparent opacity-50"></div>
             
-            <div className="flex items-center justify-between border-b border-slate-700/80 pb-3 mb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-400 text-sm">terminal</span>
+            <div className="flex flex-row items-center justify-between border-b border-slate-700/80 pb-3 mb-3 shrink-0">
+              <div className="flex flex-row items-center gap-2">
+                <Terminal className="w-4 h-4 text-emerald-400" />
                 <span className="font-bold tracking-widest text-[10px] text-slate-100 uppercase">Live Audit Stream</span>
               </div>
-              <div className="flex items-center gap-2 text-[10px]">
+              <div className="flex flex-row items-center gap-2 text-[10px]">
                 <span className="text-slate-500">SECURE SHELL</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
@@ -547,7 +568,7 @@ export default function DashboardPage() {
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex flex-col-reverse">
               {logs.length > 0 ? [...logs].reverse().map((log, index) => (
-                <div key={index} className="flex items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                <div key={index} className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
                   <span className="text-slate-500 shrink-0 text-[10px]">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
                   <span className={`break-words ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
                     <span className="text-blue-400 mr-1">$</span>
@@ -555,7 +576,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
               )) : (
-                <div className="flex items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                <div className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
                   <span className="text-slate-500 shrink-0">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
                   <span className="text-slate-400">
                     <span className="text-blue-400 mr-1">$</span>
@@ -571,17 +592,17 @@ export default function DashboardPage() {
 
       {/* Modals from old UI adapted to Light Theme */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-3xl">volume_off</span>
+              <VolumeX className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">إيقاف الإنذار</h3>
             <p className="text-slate-500 text-xs mb-6">يرجى إدخال كلمة المرور لتأكيد إيقاف الإنذار.</p>
             <div className="relative mb-6">
               <input type={showPassword ? "text" : "password"} value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none pr-10 font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700">
-                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             <div className="flex gap-3">
@@ -593,17 +614,17 @@ export default function DashboardPage() {
       )}
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-3xl">delete</span>
+              <Trash2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">تأكيد الحذف</h3>
             <p className="text-slate-500 text-xs mb-6">هل أنت متأكد من حذف الجهاز؟ سيتم مسح جميع البيانات.</p>
             <div className="relative mb-6">
               <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pr-10 font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700">
-                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             <div className="flex gap-3">
@@ -615,10 +636,10 @@ export default function DashboardPage() {
       )}
 
       {showPinModal && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-3xl">verified_user</span>
+              <ShieldCheck className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">إلغاء وضع السرقة</h3>
             <p className="text-slate-500 text-xs mb-6">أدخل رمز PIN المكون من 6 أرقام لتأكيد استعادة الجهاز.</p>
@@ -632,17 +653,17 @@ export default function DashboardPage() {
       )}
 
       {showUnregisterModal && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-3xl">phonelink_erase</span>
+              <Trash2 className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-bold text-slate-800 mb-2">إلغاء تسجيل الجهاز</h3>
             <p className="text-slate-500 text-xs mb-6">سيتم إزالة الجهاز من لوحة التحكم، لا يمكن التراجع عن هذا الإجراء.</p>
             <div className="relative mb-6">
               <input type={showPassword ? "text" : "password"} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pr-10 font-mono tracking-widest text-left" dir="ltr" placeholder="••••••••••••" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-700">
-                <span className="material-symbols-outlined">{showPassword ? 'visibility_off' : 'visibility'}</span>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             <div className="flex gap-3">
