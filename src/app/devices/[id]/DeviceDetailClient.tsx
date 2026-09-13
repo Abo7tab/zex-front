@@ -14,6 +14,21 @@ export default function DeviceDetailClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  function isDeviceOnline(d: any): boolean {
+    if (!d) return false;
+    const lastSeen = d.last_heartbeat_at || d.last_seen_at || d.last_heartbeat;
+    if (!lastSeen) return false;
+    const t = new Date(lastSeen).getTime();
+    if (isNaN(t) || t <= 0) return false;
+    return (now - t) < 60000;
+  }
 
   useEffect(() => {
     fetchDevice();
@@ -132,7 +147,7 @@ export default function DeviceDetailClient({ id }: { id: string }) {
     );
   }
 
-  const isOnline = Date.now() - new Date(device.last_heartbeat || 0).getTime() < 30000;
+  const isOnline = isDeviceOnline(device);
   const battery = device.battery_level ?? 0;
   
   const commands = [

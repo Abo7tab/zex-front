@@ -20,6 +20,23 @@ export default function TrackingClient() {
   const [selectedDevice, setSelectedDevice] = useState<any>(null);
   const [rtStates, setRtStates] = useState<Record<string, any>>({});
   const [historyMap, setHistoryMap] = useState<Record<string, [number, number][]>>({});
+  const [locationHistory, setLocationHistory] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  function isDeviceOnline(d: any): boolean {
+    if (!d) return false;
+    const lastSeen = d.last_heartbeat_at || d.last_seen_at || d.last_heartbeat;
+    if (!lastSeen) return false;
+    const t = new Date(lastSeen).getTime();
+    if (isNaN(t) || t <= 0) return false;
+    return (now - t) < 60000;
+  }
   
   const [geofenceEnabled, setGeofenceEnabled] = useState(false);
   const [geofenceRadius, setGeofenceRadius] = useState(500);
@@ -68,19 +85,12 @@ export default function TrackingClient() {
   const activeUid = selectedDevice?.device_uid;
   const rtState = activeUid ? rtStates[activeUid] : null;
   const statusObj = rtState?.status || rtState || {};
-  const locObj = rtState?.last_location || rtState?.location || selectedDevice?.last_location || {};
+  const latitude = Number(statusObj?.latitude ?? selectedDevice?.latitude ?? 0);
+  const longitude = Number(statusObj?.longitude ?? selectedDevice?.longitude ?? 0);
+  const accuracy = Number(statusObj?.accuracy ?? selectedDevice?.accuracy ?? 0);
+  const batteryLevel = Number(statusObj?.battery_level ?? selectedDevice?.battery_level ?? 0);
   
-  const rawLat = locObj.latitude ?? selectedDevice?.last_location?.latitude;
-  const rawLng = locObj.longitude ?? selectedDevice?.last_location?.longitude;
-  const accuracy = Number(locObj.accuracy ?? selectedDevice?.last_location?.accuracy ?? 0);
-  const batteryLevel = Number(statusObj.battery_level ?? selectedDevice?.battery_level ?? 0);
-  
-  const lastHb = statusObj?.last_heartbeat_at || selectedDevice?.last_heartbeat_at;
-  let isOnline = false;
-  if (lastHb) {
-    const t = new Date(lastHb).getTime();
-    if (!isNaN(t) && t > 0) isOnline = (Date.now() - t) < 2 * 60 * 1000;
-  }
+  const isOnline = isDeviceOnline(statusObj || selectedDevice);
 
   const currentHistory = activeUid ? (historyMap[activeUid] || []) : [];
   

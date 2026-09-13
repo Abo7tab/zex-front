@@ -28,6 +28,21 @@ const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
 export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  function isDeviceOnline(d: any): boolean {
+    if (!d) return false;
+    const lastSeen = d.last_heartbeat_at || d.last_seen_at || d.last_heartbeat;
+    if (!lastSeen) return false;
+    const t = new Date(lastSeen).getTime();
+    if (isNaN(t) || t <= 0) return false;
+    return (now - t) < 60000;
+  }
   const [device, setDevice] = useState<any>(null);
   const [devices, setDevices] = useState<any[]>([]);
   const [rtState, setRtState] = useState<any>(null);
@@ -103,9 +118,7 @@ export default function DashboardClient() {
   const isSearching  = statusObj.is_searching  ?? device?.is_searching;
   const batteryLevel = Number(statusObj.battery_level ?? device?.battery_level ?? 0);
 
-  const lastHb = statusObj?.last_heartbeat_at || device?.last_heartbeat_at;
-  let isOnline = false;
-  if (lastHb) { const t = new Date(lastHb).getTime(); if (!isNaN(t) && t > 0) isOnline = (Date.now() - t) < 2 * 60 * 1000; }
+  const isOnline = isDeviceOnline(statusObj || device);
 
   const filteredDevices = (devices || []).filter((d) => {
     if (!searchQuery) return true;
