@@ -284,10 +284,13 @@ export default function DashboardPage() {
     setActionLoading(false);
   };
 
-  const filteredDevices = devices.filter(d => 
-    d.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    d.model?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredDevices = (devices || []).filter((d) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const name = (d?.name || d?.device_uid || d?.model || '').toLowerCase();
+    const model = (d?.model || d?.device_type || '').toLowerCase();
+    return name.includes(q) || model.includes(q);
+  });
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex selection:bg-blue-600 selection:text-white font-sans overflow-hidden" dir="rtl">
@@ -301,7 +304,7 @@ export default function DashboardPage() {
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-base text-slate-900 tracking-tight leading-tight">ZEX MILITARY</span>
-              <span className="text-[10px] font-semibold text-slate-500 tracking-wider">SECURE OPERATIONS</span>
+              <span className="text-[10px] font-semibold text-slate-500 tracking-wider">العمليات المشفرة</span>
             </div>
           </div>
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex flex-row items-center gap-3">
@@ -345,7 +348,7 @@ export default function DashboardPage() {
                 <div className="flex flex-row items-center justify-between mb-2">
                   <div className="flex flex-row items-center gap-2">
                     <Smartphone className={`w-4 h-4 ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <span className={`font-bold text-xs ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>{d?.name || 'Unknown Device'}</span>
+                    <span className={`font-bold text-xs ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>{d?.name || d?.device_uid || 'جهاز تكتيكي'}</span>
                   </div>
                   {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>}
                 </div>
@@ -389,7 +392,7 @@ export default function DashboardPage() {
             
             <div className="flex flex-row items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono">
               <Radar className="w-4 h-4 text-emerald-500" />
-              <span className="text-slate-600 hidden sm:inline-block">NODE:</span>
+              <span className="text-slate-600 hidden sm:inline-block">عقدة الجهاز:</span>
               <span className="font-bold text-slate-900">{device?.device_uid || 'N/A'}</span>
             </div>
           </div>
@@ -397,7 +400,7 @@ export default function DashboardPage() {
           <div className="flex flex-row items-center gap-3">
             <div className="hidden sm:flex flex-row items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-1.5 text-xs font-bold cursor-pointer hover:bg-rose-100 transition-colors" onClick={() => alert('SOS BROADCAST SENT')}>
               <AlertTriangle className="w-4 h-4 animate-pulse" />
-              <span>EMERGENCY SOS</span>
+              <span>طوارئ SOS</span>
             </div>
             <div className="flex flex-row items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg px-3 py-1.5 text-xs font-bold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -517,7 +520,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">إطلاق إنذار صاخب</span>
-                <span className="text-[10px] text-slate-500">Force Siren 🔊</span>
+                <span className="text-[10px] text-slate-500">تفعيل الصفارة الإجبارية 🔊</span>
               </div>
             </button>
 
@@ -527,7 +530,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">إيقاف الإنذار</span>
-                <span className="text-[10px] text-slate-500">Mute Siren 🔇</span>
+                <span className="text-[10px] text-slate-500">كتم صوت الإنذار 🔇</span>
               </div>
             </button>
 
@@ -537,7 +540,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">تحديد الموقع (GPS)</span>
-                <span className="text-[10px] text-slate-500">Track Location 📍</span>
+                <span className="text-[10px] text-slate-500">تتبع الإحداثيات الحية 📍</span>
               </div>
             </button>
 
@@ -547,7 +550,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">بدء البحث (BLE)</span>
-                <span className="text-[10px] text-slate-500">Start Radar 📶</span>
+                <span className="text-[10px] text-slate-500">تفعيل الرادار المحلي 📶</span>
               </div>
             </button>
 
@@ -557,7 +560,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-800">إيقاف البحث</span>
-                <span className="text-[10px] text-slate-500">Stop Radar 🛑</span>
+                <span className="text-[10px] text-slate-500">تعطيل الرادار المحلي 🛑</span>
               </div>
             </button>
 
@@ -567,7 +570,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-rose-700">وضع السرقة</span>
-                <span className="text-[10px] text-rose-500/80">Mark Stolen 🚨</span>
+                <span className="text-[10px] text-rose-500/80">تفعيل بروتوكول السرقة 🚨</span>
               </div>
             </button>
 
@@ -577,7 +580,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-emerald-700">إلغاء وضع السرقة</span>
-                <span className="text-[10px] text-emerald-500/80">Mark Found ✅</span>
+                <span className="text-[10px] text-emerald-500/80">إلغاء بلاغ السرقة ✅</span>
               </div>
             </button>
 
@@ -587,7 +590,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-xs text-slate-700">مسح الجهاز</span>
-                <span className="text-[10px] text-slate-500/80">Wipe & Delete 🗑️</span>
+                <span className="text-[10px] text-slate-500/80">حذف وتجميد الجهاز 🗑️</span>
               </div>
             </button>
           </div>
@@ -598,10 +601,10 @@ export default function DashboardPage() {
             <div className="flex flex-row items-center justify-between border-b border-slate-700/80 pb-3 mb-3 shrink-0">
               <div className="flex flex-row items-center gap-2">
                 <Terminal className="w-4 h-4 text-emerald-400" />
-                <span className="font-bold tracking-widest text-[10px] text-slate-100 uppercase">Live Audit Stream</span>
+                <span className="font-bold tracking-widest text-[10px] text-slate-100 uppercase">سجل التدقيق والأحداث المباشر</span>
               </div>
               <div className="flex flex-row items-center gap-2 text-[10px]">
-                <span className="text-slate-500">SECURE SHELL</span>
+                <span className="text-slate-500">قناة مشفرة</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               </div>
             </div>
