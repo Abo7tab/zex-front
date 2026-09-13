@@ -234,7 +234,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex-1 flex flex-col justify-center gap-6">
+            <div className="flex flex-col gap-3">
             {error && (
               <div className="flex flex-row items-start justify-between gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 shadow-sm transition-all duration-300">
                 <div className="flex flex-row items-start gap-3">
@@ -395,6 +396,7 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+          </div>
 
         </section>
       </main>
