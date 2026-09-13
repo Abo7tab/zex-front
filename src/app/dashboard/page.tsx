@@ -7,6 +7,7 @@ import { subscribeToDeviceState } from '@/lib/firebase';
 import { LogOut, User, MapPin, Search, AlertTriangle, ShieldAlert, ShieldCheck, Volume2, VolumeX, Battery, Smartphone, Wifi, WifiOff, Trash, Trash2, Menu, X, ExternalLink, ChevronUp, ChevronDown, Bluetooth, Settings, Eye, EyeOff, Sliders } from 'lucide-react';
 import DeviceMap from '@/components/map/DeviceMap';
 import SettingsModal from '@/components/modals/SettingsModal';
+import LiveAuditTerminal from '@/components/dashboard/LiveAuditTerminal';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
@@ -510,6 +511,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <LiveAuditTerminal />
 
       {showUnregisterModal && (
         <div className="fixed inset-0 bg-[#0A0F16]/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
