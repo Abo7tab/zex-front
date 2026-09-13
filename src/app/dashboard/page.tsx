@@ -13,6 +13,9 @@ import {
   Terminal, ShieldAlert
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import SettingsModal from '@/components/modals/SettingsModal';
+import { useRouter } from 'next/navigation';
+
 const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
   ssr: false,
   loading: () => (
@@ -21,8 +24,6 @@ const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
     </div>
   ),
 });
-import SettingsModal from '@/components/modals/SettingsModal';
-import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
@@ -32,20 +33,6 @@ export default function DashboardPage() {
   const [devices, setDevices] = useState<any[]>([]);
   const [rtState, setRtState] = useState<any>(null);
   const [locationHistory, setLocationHistory] = useState<[number, number][]>([]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono dir-rtl" dir="rtl">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <span className="text-sm font-bold text-slate-200">جاري تهيئة غرفة العمليات التكتيكية C4ISR...</span>
-        <span className="text-xs text-slate-500 mt-1">Securing connection to ZEX Node...</span>
-      </div>
-    );
-  }
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -63,27 +50,15 @@ export default function DashboardPage() {
   
   const logs = useTerminalStore((state) => state.logs);
   const router = useRouter();
-
   const [tick, setTick] = useState(0);
+
   useEffect(() => {
-    const timer = setInterval(() => setTick(t => t + 1), 10000);
-    return () => clearInterval(timer);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    setIsLoading(true);
-    getMe()
-      .then((data) => {
-        setUser(data?.data || data);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setUser(null);
-        setIsLoading(false);
-        router.push('/login');
-      });
-    fetchDevices();
+    const timer = setInterval(() => setTick(t => t + 1), 10000);
+    return () => clearInterval(timer);
   }, []);
 
   const fetchDevices = async () => {
@@ -110,6 +85,38 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const token = localStorage.getItem('zex_token') || localStorage.getItem('zex_auth_token');
+    const hasCookie = document.cookie.includes('zex_token=');
+    
+    if (!token && !hasCookie) {
+      router.replace('/login');
+      return;
+    }
+
+    getMe()
+      .then((data) => {
+        setUser(data?.data || data);
+        fetchDevices();
+      })
+      .catch(() => {
+        localStorage.removeItem('zex_token');
+        localStorage.removeItem('zex_auth_token');
+        router.replace('/login');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
+    const safetyTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(safetyTimer);
+  }, [router]);
+
+  useEffect(() => {
     if (device?.device_uid && typeof window !== 'undefined') {
       try {
         const unsub = subscribeToDeviceState(device.device_uid, (data: any) => {
@@ -131,12 +138,10 @@ export default function DashboardPage() {
   const isStolen = statusObj.is_stolen ?? device?.is_stolen;
   const isSearching = statusObj.is_searching ?? device?.is_searching;
   const batteryLevel = statusObj.battery_level ?? device?.battery_level ?? 0;
-  const lastHeartbeatStr = statusObj.last_heartbeat_at ?? device?.last_heartbeat_at;
 
   const latitude = locObj.latitude ?? device?.last_location?.latitude;
   const longitude = locObj.longitude ?? device?.last_location?.longitude;
   const accuracy = locObj.accuracy ?? device?.last_location?.accuracy;
-  const isBleMesh = locObj.provider === 'ble_mesh';
   
   const lastHb = statusObj?.last_heartbeat_at || device?.last_heartbeat_at;
   let isOnline = false;
@@ -168,6 +173,16 @@ export default function DashboardPage() {
       });
     }
   }, [latitude, longitude]);
+
+  if (!mounted || isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono dir-rtl" dir="rtl">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <span className="text-sm font-bold text-slate-200">جاري تهيئة غرفة العمليات التكتيكية C4ISR...</span>
+        <span className="text-xs text-slate-500 mt-1">Securing connection to ZEX Node...</span>
+      </div>
+    );
+  }
 
   // Command Matrix Action Handlers
   const handleStartScream = async () => {
@@ -276,11 +291,8 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex selection:bg-blue-600 selection:text-white font-sans overflow-hidden" dir="rtl">
-      
-      {/* Subtle Grid Background */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.035] bg-[radial-gradient(#1e3a8a_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-      {/* Sidebar: Devices & Operator Intel */}
       <aside className="w-80 bg-white border-l border-slate-200/80 shadow-md hidden lg:flex flex-col z-20 h-screen relative shrink-0">
         <div className="p-5 border-b border-slate-100 flex flex-col gap-4">
           <div className="flex flex-row items-center gap-3">
@@ -324,7 +336,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            {filteredDevices?.length > 0 ? (filteredDevices || []).map((d) => (
+            {(filteredDevices?.length || 0) > 0 ? (filteredDevices || []).map((d) => (
               <div 
                 key={d.id} 
                 onClick={() => setDevice(d)}
@@ -339,7 +351,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex flex-row items-center justify-between text-[10px] font-mono">
                   <span className={`${device?.id === d.id ? 'text-blue-600' : 'text-slate-500'} truncate mr-2`}>{d?.model || 'Generic Model'}</span>
-                  <span className={`px-1.5 py-0.5 rounded flex flex-row items-center gap-1 shrink-0 ${d.battery_level > 20 ? (device?.id === d.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600') : 'bg-rose-100 text-rose-700'}`}>
+                  <span className={`px-1.5 py-0.5 rounded flex flex-row items-center gap-1 shrink-0 ${(d?.battery_level ?? 0) > 20 ? (device?.id === d.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600') : 'bg-rose-100 text-rose-700'}`}>
                     <Battery className="w-3 h-3" />
                     {d?.battery_level ?? 0}%
                   </span>
@@ -363,10 +375,7 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {/* Main Operational Area */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        
-        {/* Top Command Header */}
         <header className="h-16 bg-white border-b border-slate-200/80 shadow-sm flex flex-row items-center justify-between px-4 sm:px-6 z-10 shrink-0">
           <div className="flex flex-row items-center gap-4">
             <div className="lg:hidden flex flex-row items-center gap-3">
@@ -399,7 +408,6 @@ export default function DashboardPage() {
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 relative z-10 scrollbar-thin scrollbar-thumb-slate-200">
           
-          {/* Operational DEFCON Banner */}
           <div className={`rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border shadow-sm ${isStolen ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50/50 border-blue-200/60 text-blue-900'}`}>
             <div className="flex flex-row items-center gap-3.5">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isStolen ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -430,11 +438,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* C4ISR Map Visualizer */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md flex flex-col gap-4 relative z-10 min-h-[450px] lg:h-[450px]">
             <div className="w-full h-full min-h-[400px] rounded-2xl overflow-hidden border border-slate-300/80 relative shadow-inner bg-slate-100">
               
-              {/* Actual Map */}
               <div className="absolute inset-0 z-0">
                 <DeviceMap 
                   latitude={latitude} 
@@ -447,10 +453,8 @@ export default function DashboardPage() {
                 />
               </div>
 
-              {/* Map Vignette Overlay */}
               <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_80px_rgba(0,0,0,0.03)] z-10"></div>
               
-              {/* Reticle / Crosshair Overlay (Visual Only) */}
               <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center opacity-30 mix-blend-overlay">
                 <div className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] border border-blue-500 rounded-full flex items-center justify-center relative">
                   <div className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px] border border-emerald-500/50 rounded-full border-dashed animate-[spin_30s_linear_infinite]"></div>
@@ -460,7 +464,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Floating Top HUD Metrics */}
               <div className="absolute top-4 left-4 right-4 z-20 flex flex-row justify-between items-start pointer-events-none">
                 <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1 font-mono text-[10px]">
                   <div className="flex flex-row items-center gap-2 text-slate-700 font-bold">
@@ -485,7 +488,6 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Geofence / Status Badge */}
               <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
                 <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg shadow-sm font-bold text-[10px] flex flex-row items-center gap-1.5">
                   <ShieldCheck className="w-3 h-3" />
@@ -495,9 +497,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Strict Command Matrix (8 Buttons EXACTLY as requested) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 z-10 shrink-0">
-            {/* 1. Scream */}
             <button onClick={handleStartScream} disabled={isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Volume2 className="w-6 h-6" />
@@ -508,7 +508,6 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 2. Stop Scream */}
             <button onClick={handleStopScreamClick} disabled={!isScreaming || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <VolumeX className="w-6 h-6" />
@@ -519,7 +518,6 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 3. Locate GPS */}
             <button onClick={handleLocate} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <MapPin className="w-6 h-6" />
@@ -530,7 +528,6 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 4. Start Search Mode */}
             <button onClick={handleStartSearch} disabled={isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <BluetoothSearching className="w-6 h-6" />
@@ -541,7 +538,6 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 5. Stop Search Mode */}
             <button onClick={handleStopSearch} disabled={!isSearching || !device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Bluetooth className="w-6 h-6" />
@@ -552,7 +548,6 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 6. Mark Stolen */}
             <button onClick={handleStartStolen} disabled={isStolen || !device} className="bg-white rounded-2xl p-4 border border-rose-200/80 shadow-sm hover:shadow-md hover:border-rose-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <ShieldAlert className="w-6 h-6" />
@@ -563,7 +558,6 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 7. Mark Found */}
             <button onClick={handleStopStolenClick} disabled={!isStolen || !device} className="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <CheckCircle className="w-6 h-6" />
@@ -574,7 +568,6 @@ export default function DashboardPage() {
               </div>
             </button>
 
-            {/* 8. Delete Device */}
             <button onClick={handleDeleteClick} disabled={!device} className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-400 transition-all flex flex-col items-center justify-center gap-3 text-center group disabled:opacity-50 disabled:cursor-not-allowed">
               <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Trash2 className="w-6 h-6" />
@@ -586,7 +579,6 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          {/* Live Audit Stream Terminal Component */}
           <div className="bg-slate-900 rounded-3xl p-5 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-64 flex flex-col relative z-10 overflow-hidden mb-6 shrink-0">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-emerald-400 to-transparent opacity-50"></div>
             
@@ -602,7 +594,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex flex-col-reverse">
-              {logs.length > 0 ? [...(logs || [])].reverse().map((log, index) => (
+              {(logs || []).length > 0 ? [...(logs || [])].reverse().map((log, index) => (
                 <div key={index} className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
                   <span className="text-slate-500 shrink-0 text-[10px]">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
                   <span className={`break-words ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
@@ -625,7 +617,6 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Modals from old UI adapted to Light Theme */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex flex-col items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-3xl w-full max-w-sm shadow-2xl border border-slate-100 text-center" dir="rtl">
