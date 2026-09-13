@@ -259,8 +259,9 @@ export default function DashboardPage() {
                   key={d.id} 
                   onClick={() => {
                     setRtState(null);
-                    setDevice(d); setShowControlCard(true);
-                    setShowMobileMenu(false);
+                    setLocationHistory([]);
+                      setDevice(d); setShowControlCard(true);
+                      setShowMobileMenu(false);
                   }}
                   className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${device?.id === d.id ? 'bg-slate-50 border-blue-500 shadow-sm' : 'bg-white border-transparent hover:bg-slate-50'}`}
                 >
