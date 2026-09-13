@@ -10,26 +10,29 @@ const api = axios.create({
   }
 });
 
-api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = Cookies.get('zex_token') || localStorage.getItem('zex_token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = Cookies.get('zex_token') || localStorage.getItem('zex_token') || Cookies.get('zex_auth_token');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-  }
-  
-  (config as any).metadata = { startTime: new Date() };
-  
-  const method = config.method?.toUpperCase() || 'GET';
-  const url = config.url || '';
-  const time = new Date().toISOString().substring(11, 19) + 'Z';
-  
-  if (typeof window !== 'undefined') {
-    useTerminalStore.getState().addLog(`[${time}] SYS//REQ > [${method}] ${url}`);
-  }
-  
-  return config;
-});
+    
+    (config as any).metadata = { startTime: new Date() };
+    
+    const method = config.method?.toUpperCase() || 'GET';
+    const url = config.url || '';
+    const time = new Date().toISOString().substring(11, 19) + 'Z';
+    
+    if (typeof window !== 'undefined') {
+      useTerminalStore.getState().addLog(`[${time}] SYS//REQ > [${method}] ${url}`);
+    }
+    
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 api.interceptors.response.use(
   (response) => {

@@ -17,14 +17,21 @@ export const getFirebaseDb = () => {
 };
 
 export const subscribeToDeviceState = (deviceUid: string, callback: (data: any) => void) => {
-  const db = getFirebaseDb();
-  if (!db) return () => {};
-  
-  const deviceRef = ref(db, `devices/${deviceUid}`);
-  const unsubscribe = onValue(deviceRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(snapshot.val());
-    }
-  });
-  return unsubscribe;
+  if (typeof window === 'undefined' || !deviceUid) return () => {};
+  try {
+    const db = getFirebaseDb();
+    if (!db) return () => {};
+    const deviceRef = ref(db, `devices/${deviceUid}`);
+    const unsubscribe = onValue(deviceRef, (snapshot) => {
+      if (snapshot.exists()) {
+        callback(snapshot.val());
+      }
+    }, (error) => {
+      console.warn('Firebase read warning:', error);
+    });
+    return unsubscribe;
+  } catch (err) {
+    console.warn('Firebase subscription bypass:', err);
+    return () => {};
+  }
 };

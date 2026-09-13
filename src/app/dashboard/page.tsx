@@ -26,12 +26,18 @@ import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [device, setDevice] = useState<any>(null);
+  const [devices, setDevices] = useState<any[]>([]);
+  const [rtState, setRtState] = useState<any>(null);
+  const [locationHistory, setLocationHistory] = useState<[number, number][]>([]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono dir-rtl" dir="rtl">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -40,12 +46,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const [user, setUser] = useState<any>(null);
-  const [device, setDevice] = useState<any>(null);
-  const [devices, setDevices] = useState<any[]>([]);
-  const [rtState, setRtState] = useState<any>(null);
-  const [locationHistory, setLocationHistory] = useState<[number, number][]>([]);
   
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
@@ -72,9 +72,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    setIsLoading(true);
     getMe()
-      .then((data) => setUser(data?.data || data))
+      .then((data) => {
+        setUser(data?.data || data);
+        setIsLoading(false);
+      })
       .catch(() => {
+        setUser(null);
+        setIsLoading(false);
         router.push('/login');
       });
     fetchDevices();
@@ -92,18 +98,29 @@ export default function DashboardPage() {
           }
           return fetchedDevices[0];
         });
+      } else {
+        setDevices([]);
+        setDevice(null);
       }
     } catch (err) {
       console.error("Failed to fetch devices");
+      setDevices([]);
+      setDevice(null);
     }
   };
 
   useEffect(() => {
-    if (device?.device_uid) {
-      const unsub = subscribeToDeviceState(device.device_uid, (data: any) => {
-        setRtState(data);
-      });
-      return () => unsub();
+    if (device?.device_uid && typeof window !== 'undefined') {
+      try {
+        const unsub = subscribeToDeviceState(device.device_uid, (data: any) => {
+          setRtState(data);
+        });
+        return () => {
+          if (typeof unsub === 'function') unsub();
+        };
+      } catch (e) {
+        console.warn("RT State subscription bypassed");
+      }
     }
   }, [device?.device_uid]);
 
