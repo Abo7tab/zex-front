@@ -89,12 +89,14 @@ export default function TrackingClient() {
   const displayedHistory = currentHistory.slice(0, displayedHistoryCount);
 
   function getTacticalName(d: any): string {
-    if (!d) return 'ZEX Node';
-    if (d.name && d.name.trim()) return d.name.trim();
-    const brandModel = `${d.brand || ''} ${d.model || ''}`.trim();
-    if (brandModel) return brandModel;
+    if (!d) return 'Device';
+    if (d.device_name && String(d.device_name).trim()) return String(d.device_name).trim();
+    if (d.name && String(d.name).trim()) return String(d.name).trim();
+    if (d.device_model && String(d.device_model).trim()) return String(d.device_model).trim();
+    if (d.model && String(d.model).trim()) return String(d.model).trim();
+    
     const uid = String(d.device_uid || d.uid || '');
-    return uid ? `ZEX Node (${uid.slice(-4).toUpperCase()})` : 'ZEX Device';
+    return uid ? `Device #${uid.slice(-4).toUpperCase()}` : 'Device';
   }
 
   return (
@@ -150,7 +152,7 @@ export default function TrackingClient() {
           <div className="p-4 sm:p-5 flex flex-col gap-5">
             {/* Device Selector */}
             <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3 relative">
-              <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5"><Navigation className="w-3.5 h-3.5"/> الوحدة النشطة</label>
+              <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5"><Navigation className="w-3.5 h-3.5"/> الوحدة الActiveة</label>
               <div className="relative">
                 <select 
                   className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold rounded-xl pl-3 pl-10 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

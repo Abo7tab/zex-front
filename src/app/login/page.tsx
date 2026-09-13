@@ -140,7 +140,7 @@ export default function LoginPage() {
               </div>
               <span className="inline-flex flex-row items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                قفل تكتيكي نشط
+                قفل تكتيكي Active
               </span>
             </div>
 
@@ -150,7 +150,7 @@ export default function LoginPage() {
                   <Crosshair className="w-4 h-4 text-blue-400" />
                   <span dir="ltr">Galileo + GPS</span>
                 </span>
-                <span className="text-emerald-400 font-bold">مزامنة نشطة</span>
+                <span className="text-emerald-400 font-bold">مزامنة Activeة</span>
               </div>
               <div className="h-28 w-full flex items-center justify-center relative my-1">
                 <svg className="w-full h-full text-blue-500/30" fill="none" preserveAspectRatio="none" viewBox="0 0 320 80">

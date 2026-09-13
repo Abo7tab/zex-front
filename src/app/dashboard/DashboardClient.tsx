@@ -130,8 +130,8 @@ export default function DashboardClient() {
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
   const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); fetchDevices(); } catch { alert('Password غير صحيحة'); } finally { setActionLoading(false); } };
   const handleStartSearch  = async () => { if (!device) return; try { await startSearchMode(device.id, 30); setDevice((p:any)=>({...p,is_searching:true})); setRtState((p:any)=>p?{...p,is_searching:true}:null); fetchDevices(); } catch { alert('فشل بدء البحث'); } };
-  const handleStopSearch   = async () => { if (!device) return; try { await stopSearchMode(device.id); setDevice((p:any)=>({...p,is_searching:false})); setRtState((p:any)=>p?{...p,is_searching:false}:null); fetchDevices(); } catch { alert('فشل إيقاف البحث'); } };
-  const handleStartStolen  = async () => { if (!device) return; try { await markStolen(device.id); setDevice((p:any)=>({...p,is_stolen:true})); setRtState((p:any)=>p?{...p,is_stolen:true}:null); fetchDevices(); } catch { alert('فشل تفعيل وضع السرقة'); } };
+  const handleStopSearch   = async () => { if (!device) return; try { await stopSearchMode(device.id); setDevice((p:any)=>({...p,is_searching:false})); setRtState((p:any)=>p?{...p,is_searching:false}:null); fetchDevices(); } catch { alert('فشل Stop Radar'); } };
+  const handleStartStolen  = async () => { if (!device) return; try { await markStolen(device.id); setDevice((p:any)=>({...p,is_stolen:true})); setRtState((p:any)=>p?{...p,is_stolen:true}:null); fetchDevices(); } catch { alert('فشل تفعيل Mark Stolen'); } };
   const handleStopStolenClick = () => { if (!device) return; setShowPinModal(true); };
   const handleMarkFound    = async () => { if (!device) return; setActionLoading(true); try { await markFound(device.id, pinInput.trim()); setShowPinModal(false); setPinInput(''); setDevice((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); setRtState((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); fetchDevices(); } catch { alert('رمز PIN غير صحيح'); } finally { setActionLoading(false); } };
   const handleDeleteClick  = () => { if (!device) return; setShowDeleteModal(true); };
@@ -139,14 +139,14 @@ export default function DashboardClient() {
   const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Password غير صحيحة أو فشل الحذف'); } finally { setActionLoading(false); } };
 
   const commands = [
-    { label: 'إنذار صاخب',    sub: '🔊 تفعيل الصفارة',      icon: <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'blue',    onClick: handleStartScream,    disabled: !!isScreaming || !device },
-    { label: 'Silence Alert', sub: '🔇 كتم الصوت',           icon: <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'slate',   onClick: handleStopScreamClick, disabled: !isScreaming || !device },
+    { label: 'Scream Alert',    sub: '🔊 Siren On',      icon: <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'blue',    onClick: handleStartScream,    disabled: !!isScreaming || !device },
+    { label: 'Silence Alert', sub: '🔇 Mute Siren',           icon: <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'slate',   onClick: handleStopScreamClick, disabled: !isScreaming || !device },
     { label: 'GPS Locate',  sub: '📍 GPS مباشر',           icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'emerald', onClick: handleLocate,         disabled: !device },
-    { label: 'بحث BLE',        sub: '📶 رادار محلي',          icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'indigo',  onClick: handleStartSearch,    disabled: !!isSearching || !device },
-    { label: 'إيقاف البحث',   sub: '🛑 تعطيل الرادار',       icon: <Bluetooth className="w-5 h-5 sm:w-6 sm:h-6" />,        color: 'slate',   onClick: handleStopSearch,     disabled: !isSearching || !device },
-    { label: 'وضع السرقة',    sub: '🚨 بروتوكول الطوارئ',   icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />,       color: 'rose',    onClick: handleStartStolen,    disabled: !!isStolen || !device },
-    { label: 'Unmark Stolen',  sub: '✅ استعادة الجهاز',      icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />,       color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
-    { label: 'Wipe الجهاز',    sub: '🗑️ حذف نهائي',          icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'slate',   onClick: handleDeleteClick,    disabled: !device },
+    { label: 'BLE Radar',        sub: '📶 Local Search',          icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'indigo',  onClick: handleStartSearch,    disabled: !!isSearching || !device },
+    { label: 'Stop Radar',   sub: '🛑 Disable BLE',       icon: <Bluetooth className="w-5 h-5 sm:w-6 sm:h-6" />,        color: 'slate',   onClick: handleStopSearch,     disabled: !isSearching || !device },
+    { label: 'Mark Stolen',    sub: '🚨 Protocol الطوارئ',   icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />,       color: 'rose',    onClick: handleStartStolen,    disabled: !!isStolen || !device },
+    { label: 'Unmark Stolen',  sub: '✅ Recovered',      icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />,       color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
+    { label: 'Wipe الجهاز',    sub: '🗑️ Permanent Purge',          icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'slate',   onClick: handleDeleteClick,    disabled: !device },
   ];
   const btnColors: Record<string,string> = {
     blue:    'bg-blue-50 text-blue-600',
@@ -157,12 +157,14 @@ export default function DashboardClient() {
   };
 
   function getTacticalName(d: any): string {
-    if (!d) return 'ZEX Node';
-    if (d.name && d.name.trim()) return d.name.trim();
-    const brandModel = `${d.brand || ''} ${d.model || ''}`.trim();
-    if (brandModel) return brandModel;
+    if (!d) return 'Device';
+    if (d.device_name && String(d.device_name).trim()) return String(d.device_name).trim();
+    if (d.name && String(d.name).trim()) return String(d.name).trim();
+    if (d.device_model && String(d.device_model).trim()) return String(d.device_model).trim();
+    if (d.model && String(d.model).trim()) return String(d.model).trim();
+    
     const uid = String(d.device_uid || d.uid || '');
-    return uid ? `ZEX Node (${uid.slice(-4).toUpperCase()})` : 'ZEX Device';
+    return uid ? `Device #${uid.slice(-4).toUpperCase()}` : 'Device';
   }
 
   const memoizedDeviceMap = useMemo(() => (
@@ -187,7 +189,7 @@ export default function DashboardClient() {
           <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shrink-0"><Shield className="w-4 h-4" /></div>
           <div className="flex flex-col">
             <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight">ZEX MILITARY</span>
-            <span className="text-[10px] font-semibold text-slate-500">العمليات المشفرة</span>
+            <span className="text-[10px] font-semibold text-slate-500">Encrypted Operations</span>
           </div>
         </div>
         <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/60 flex flex-row items-center gap-2.5">
@@ -202,7 +204,7 @@ export default function DashboardClient() {
       {/* Device List */}
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
         <div className="flex flex-row items-center justify-between text-xs font-bold text-slate-700">
-          <span className="flex flex-row items-center gap-1.5"><Smartphone className="w-3.5 h-3.5 text-blue-600" />الوحدات النشطة</span>
+          <span className="flex flex-row items-center gap-1.5"><Smartphone className="w-3.5 h-3.5 text-blue-600" />الوحدات الActiveة</span>
           <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px]">{devices?.length || 0}</span>
         </div>
         <div className="relative">
@@ -226,7 +228,7 @@ export default function DashboardClient() {
                 {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
               </div>
               <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-slate-500 truncate">{d?.model || d?.brand || 'Android Device'}</span>
+                <span className="text-slate-500 truncate">{`Android ${d?.android_version || '10'} • ${d?.device_model || d?.model || d?.brand || ''}`}</span>
                 <span className={`px-1 py-0.5 rounded flex items-center gap-0.5 ${(d?.battery_level ?? 0) > 20 ? 'bg-slate-100 text-slate-600' : 'bg-rose-100 text-rose-700'}`}>
                   <Battery className="w-2.5 h-2.5" />{d?.battery_level ?? 0}%
                 </span>
@@ -321,19 +323,19 @@ export default function DashboardClient() {
                     {isStolen ? <AlertTriangle className="w-4 h-4 animate-pulse" /> : <ShieldCheck className="w-4 h-4" />}
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-sm">{isStolen ? '⚠ سرقة: بروتوكول الطوارئ نشط' : 'الحالة التكتيكية: مستقرة'}</span>
-                    <span className={`text-[11px] ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>{isStolen ? 'التتبع السري نشط — AES-256 E2EE' : 'جميع الأنظمة الدفاعية طبيعية — DEFCON-5'}</span>
+                    <span className="font-bold text-sm">{isStolen ? '⚠ سرقة: Protocol الطوارئ Active' : 'TACTICAL STATUS: DEFCON-5 NOMINAL'}</span>
+                    <span className={`text-[11px] ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>{isStolen ? 'التتبع السري Active — AES-256 E2EE' : 'All systems operating within standard parameters. — DEFCON-5'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 font-mono text-[10px] sm:text-xs self-end sm:self-center">
                   <div className="flex flex-col items-end">
-                    <span className="text-slate-400">تشفير</span>
+                    <span className="text-slate-400">Encryption</span>
                     <span className="font-bold">AES-256</span>
                   </div>
                   <div className="w-px h-7 bg-slate-200" />
                   <div className="flex flex-col items-end">
-                    <span className="text-slate-400">بروتوكول</span>
-                    <span className="font-bold text-emerald-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />نشط</span>
+                    <span className="text-slate-400">Protocol</span>
+                    <span className="font-bold text-emerald-600 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Active</span>
                   </div>
                 </div>
               </div>
@@ -383,7 +385,7 @@ export default function DashboardClient() {
 
                   <div className="absolute bottom-2.5 left-2.5 z-20 pointer-events-none">
                     <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-1 rounded-lg font-bold text-[9px] sm:text-[10px] flex items-center gap-1">
-                      <ShieldCheck className="w-2.5 h-2.5" />نطاق آمن
+                      <ShieldCheck className="w-2.5 h-2.5" />Safe Geofence
                     </div>
                   </div>
                 </div>
@@ -480,7 +482,7 @@ export default function DashboardClient() {
           <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="ltr">
             <div className="w-3 h-1 rounded-full bg-slate-300 mx-auto mb-4 sm:hidden" />
             <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3"><ShieldCheck className="w-7 h-7" /></div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Cancel وضع السرقة</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Cancel Mark Stolen</h3>
             <p className="text-slate-500 text-xs mb-5">أدخل رمز PIN المكون من 6 digits.</p>
             <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-5 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
             <div className="flex gap-3">
