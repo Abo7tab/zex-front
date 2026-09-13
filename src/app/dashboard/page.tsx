@@ -13,13 +13,13 @@ import {
   Terminal, ShieldAlert
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), { 
+const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs">
-      جاري تحميل الخريطة التكتيكية...
+    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs rounded-2xl">
+      <span>جاري تحميل الخريطة التكتيكية C4ISR...</span>
     </div>
-  )
+  ),
 });
 import SettingsModal from '@/components/modals/SettingsModal';
 import { useRouter } from 'next/navigation';
@@ -71,10 +71,12 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    getMe().then((data) => setUser(data.data || data)).catch(() => {
-      logout();
-      router.push('/login');
-    });
+    if (typeof window === 'undefined') return;
+    getMe()
+      .then((data) => setUser(data?.data || data))
+      .catch(() => {
+        router.push('/login');
+      });
     fetchDevices();
   }, []);
 
