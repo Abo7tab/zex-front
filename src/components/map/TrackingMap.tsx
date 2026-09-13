@@ -94,7 +94,7 @@ export default function TrackingMap({
       zoomControl={false}
     >
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution=""
       />
       
@@ -118,7 +118,7 @@ export default function TrackingMap({
       )}
 
       {/* Draw Markers for all devices */}
-      {devices.map(d => {
+      {devices.map((d, index) => {
         const uid = d.device_uid;
         if (!uid) return null;
         const rt = rtStates[uid];
@@ -131,13 +131,14 @@ export default function TrackingMap({
         const icon = createColoredIcon(color);
         const isSelected = uid === selectedDeviceId;
 
-        // Jitter to prevent overlap
-        const hash = uid.split('').reduce((a:number,b:string)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-        const jLat = lat + ((hash % 100) * 0.000005);
-        const jLng = lng + (((hash >> 2) % 100) * 0.000005);
+        // Offset based on index to prevent overlap
+        const offsetLat = (index * 0.0005);
+        const offsetLng = (index * 0.0005);
+        const finalLat = lat + offsetLat;
+        const finalLng = lng + offsetLng;
 
         return (
-          <Marker key={uid} position={[jLat, jLng]} icon={icon || undefined} zIndexOffset={isSelected ? 1000 : 0}>
+          <Marker key={uid} position={[finalLat, finalLng]} icon={icon || undefined} zIndexOffset={isSelected ? 1000 : 0}>
             <Popup>
               <div dir="rtl" className="font-sans text-xs">
                 <strong>{d.name || d.device_uid}</strong><br />

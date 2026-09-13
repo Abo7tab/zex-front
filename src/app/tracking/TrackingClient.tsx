@@ -89,11 +89,10 @@ export default function TrackingClient() {
   const displayedHistory = currentHistory.slice(0, displayedHistoryCount);
 
   function getTacticalName(d: any): string {
-    if (!d) return 'جهاز تكتيكي';
-    if (d.name && d.name.trim()) return d.name.trim();
-    const uid = String(d.device_uid || d.uid || '');
-    if (!uid) return 'جهاز تكتيكي';
-    return `جهاز ميداني (${uid.slice(-4).toUpperCase()})`;
+    if (d?.name && d.name.trim()) return d.name.trim();
+    const uid = String(d?.device_uid || d?.uid || '');
+    if (!uid) return 'محطة استطلاع تكتيكية';
+    return `محطة استطلاع تكتيكية (#${uid.slice(-4).toUpperCase()})`;
   }
 
   return (

@@ -157,11 +157,10 @@ export default function DashboardClient() {
   };
 
   function getTacticalName(d: any): string {
-    if (!d) return 'جهاز تكتيكي';
-    if (d.name && d.name.trim()) return d.name.trim();
-    const uid = String(d.device_uid || d.uid || '');
-    if (!uid) return 'جهاز تكتيكي';
-    return `جهاز ميداني (${uid.slice(-4).toUpperCase()})`;
+    if (d?.name && d.name.trim()) return d.name.trim();
+    const uid = String(d?.device_uid || d?.uid || '');
+    if (!uid) return 'محطة استطلاع تكتيكية';
+    return `محطة استطلاع تكتيكية (#${uid.slice(-4).toUpperCase()})`;
   }
 
   if (isLoading) {
@@ -221,7 +220,7 @@ export default function DashboardClient() {
                 {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
               </div>
               <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-slate-500 truncate">{d?.model || 'Generic'}</span>
+                <span className="text-slate-500 truncate">{d?.model || 'وحدة اتصالات تشغيلية'}</span>
                 <span className={`px-1 py-0.5 rounded flex items-center gap-0.5 ${(d?.battery_level ?? 0) > 20 ? 'bg-slate-100 text-slate-600' : 'bg-rose-100 text-rose-700'}`}>
                   <Battery className="w-2.5 h-2.5" />{d?.battery_level ?? 0}%
                 </span>
