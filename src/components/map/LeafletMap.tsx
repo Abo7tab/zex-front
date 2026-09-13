@@ -50,52 +50,72 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
+const CenterMap = ({ lat, lng }: { lat: number, lng: number }) => {
   const map = useMap();
-  
   useEffect(() => {
-    if (map && lat && lng) {
-      map.flyTo([lat, lng], map.getZoom());
-    }
+    map.flyTo([lat, lng], 16, { duration: 1.5 });
   }, [lat, lng, map]);
-  
   return null;
-}
+};
 
-interface MapProps {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-  isOnline?: boolean;
-  batteryLevel?: number;
-  deviceId?: string;
-  history?: [number, number][];
-}
-
-export default function LeafletMap({ latitude, longitude, accuracy, isOnline, batteryLevel, deviceId, history }: MapProps) {
+export default function LeafletMap({ 
+  latitude, 
+  longitude, 
+  accuracy, 
+  isOnline, 
+  batteryLevel, 
+  deviceId, 
+  history = []
+}: { 
+  latitude: number, 
+  longitude: number, 
+  accuracy: number, 
+  isOnline: boolean, 
+  batteryLevel: number,
+  deviceId?: string,
+  history?: [number, number][]
+}) {
   if (typeof window === 'undefined') return null;
+
+  // Add deterministic jitter based on deviceId to avoid stacking markers exactly on top of each other
+  let jitterLat = 0;
+  let jitterLng = 0;
+  if (deviceId) {
+    const hash = deviceId.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+    jitterLat = (hash % 100) * 0.000002;
+    jitterLng = ((hash >> 2) % 100) * 0.000002;
+  }
+  
+  const displayLat = latitude + jitterLat;
+  const displayLng = longitude + jitterLng;
+
   return (
-    <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: '100%', width: '100%', zIndex: 10 }}>
+    <MapContainer 
+      center={[displayLat, displayLng]} 
+      zoom={16} 
+      style={{ height: '100%', width: '100%', background: '#0f172a' }}
+      zoomControl={false}
+    >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
       />
-      <MapUpdater lat={latitude} lng={longitude} />
+      <CenterMap lat={displayLat} lng={displayLng} />
       
       {history && history.length > 0 && (
         <Polyline positions={history} pathOptions={{ color: '#3b82f6', weight: 4, dashArray: '5, 10' }} />
       )}
 
-      <Marker position={[latitude, longitude]} icon={customIcon}>
+      <Marker position={[displayLat, displayLng]} icon={customIcon}>
         <Popup>
           <strong>{deviceId || 'Device'}</strong><br />
           {isOnline ? 'Status: Online' : 'Status: Offline'}<br />
-          Battery: {batteryLevel ?? 0}%
+          {batteryLevel !== undefined && `Battery: ${batteryLevel}%`}
         </Popup>
       </Marker>
       
       {accuracy && accuracy > 0 && (
-        <Circle center={[latitude, longitude]} radius={accuracy} pathOptions={{ color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.2 }} />
+        <Circle center={[displayLat, displayLng]} radius={accuracy} pathOptions={{ fillColor: '#3b82f6', color: '#2563eb', weight: 1, fillOpacity: 0.1 }} />
       )}
     </MapContainer>
   );

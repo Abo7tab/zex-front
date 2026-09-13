@@ -69,11 +69,16 @@ export default function DashboardClient() {
   useEffect(() => {
     const uid = device?.device_uid;
     if (!uid) return;
+    setLocationHistory([]); // Reset history when switching device
     let unsub: (() => void) | null = null;
     try { unsub = subscribeToDeviceState(uid, (data: any) => { if (data) setRtState(data); }); }
     catch (e) { console.warn('Firebase sub error', e); }
     return () => { if (typeof unsub === 'function') unsub(); };
   }, [device?.device_uid]);
+
+  useEffect(() => {
+    setLocationHistory([]);
+  }, [device?.id]);
 
   const statusObj = rtState?.status || rtState || {};
   const locObj = rtState?.last_location || rtState?.location || device?.last_location || {};
@@ -151,6 +156,15 @@ export default function DashboardClient() {
     rose:    'bg-rose-50 text-rose-600',
   };
 
+  function getTacticalName(d: any): string {
+    if (!d) return 'جهاز تكتيكي';
+    if (d.name && d.name.trim()) return d.name.trim();
+    const uid = String(d.device_uid || d.uid || '');
+    const short = uid.replace(/^zex-uid-|^zex-/i, '').slice(0, 6).toUpperCase();
+    if (!short) return 'وحدة ميدانية';
+    return `الوحدة ${short}`;
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono" dir="rtl">
@@ -196,9 +210,14 @@ export default function DashboardClient() {
             <div key={d.id} onClick={() => { setDevice(d); setShowMobileMenu(false); }}
               className={`p-2.5 rounded-xl border cursor-pointer transition-all ${device?.id === d.id ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
               <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5">
-                  <Smartphone className={`w-3.5 h-3.5 ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`} />
-                  <span className={`font-bold text-xs truncate max-w-[120px] ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>{d?.name || d?.device_uid || 'جهاز تكتيكي'}</span>
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <Smartphone className={`w-3.5 h-3.5 ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <span className={`font-bold text-xs truncate max-w-[120px] ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>
+                      {getTacticalName(d)}
+                    </span>
+                  </div>
+                  <span className="text-[9px] text-slate-400 font-mono truncate pl-5">{d?.device_uid || ''}</span>
                 </div>
                 {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
               </div>
@@ -262,7 +281,7 @@ export default function DashboardClient() {
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono max-w-[180px] sm:max-w-none">
               <Radar className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
               <span className="text-slate-500 hidden sm:inline">عقدة:</span>
-              <span className="font-bold text-slate-900 truncate">{device?.device_uid || 'N/A'}</span>
+              <span className="font-bold text-slate-900 truncate" title={device?.device_uid}>{getTacticalName(device)}</span>
             </div>
           </div>
 
