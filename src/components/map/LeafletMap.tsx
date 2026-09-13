@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -52,9 +52,13 @@ if (typeof window !== 'undefined') {
 
 function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
-  useEffect(() => {
+  const flyToLocation = useCallback(() => {
     map.flyTo([lat, lng], map.getZoom());
   }, [lat, lng, map]);
+
+  useEffect(() => {
+    flyToLocation();
+  }, [flyToLocation]);
   return null;
 }
 
@@ -62,12 +66,13 @@ interface MapProps {
   latitude: number;
   longitude: number;
   accuracy?: number;
-  deviceName: string;
-  lastSeen?: string;
-  locationHistory?: [number, number][];
+  isOnline?: boolean;
+  batteryLevel?: number;
+  deviceId?: string;
+  history?: [number, number][];
 }
 
-export default function LeafletMap({ latitude, longitude, accuracy, deviceName, lastSeen, locationHistory }: MapProps) {
+export default function LeafletMap({ latitude, longitude, accuracy, isOnline, batteryLevel, deviceId, history }: MapProps) {
   if (typeof window === 'undefined') return null;
   return (
     <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: '100%', width: '100%', zIndex: 10 }}>
@@ -77,14 +82,15 @@ export default function LeafletMap({ latitude, longitude, accuracy, deviceName, 
       />
       <MapUpdater lat={latitude} lng={longitude} />
       
-      {locationHistory && locationHistory.length > 0 && (
-        <Polyline positions={locationHistory} pathOptions={{ color: '#3b82f6', weight: 4, dashArray: '5, 10' }} />
+      {history && history.length > 0 && (
+        <Polyline positions={history} pathOptions={{ color: '#3b82f6', weight: 4, dashArray: '5, 10' }} />
       )}
 
       <Marker position={[latitude, longitude]} icon={customIcon}>
         <Popup>
-          <strong>{deviceName}</strong><br />
-          {lastSeen ? `Last seen: ${lastSeen}` : 'Live location'}
+          <strong>{deviceId || 'Device'}</strong><br />
+          {isOnline ? 'Status: Online' : 'Status: Offline'}<br />
+          Battery: {batteryLevel ?? 0}%
         </Popup>
       </Marker>
       

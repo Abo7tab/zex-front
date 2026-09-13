@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
@@ -84,6 +84,11 @@ export default function DashboardPage() {
     }
   };
 
+  const handleLocate = useCallback(async () => {
+    if (!device) return;
+    try { await locateDevice(device.id); } catch(e) { alert('فشل تحديد الموقع'); }
+  }, [device?.id]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -156,18 +161,20 @@ export default function DashboardPage() {
     let interval: NodeJS.Timeout;
     if (device?.id && (rtState?.live_tracking || rtState?.stolen_mode)) {
       interval = setInterval(() => {
-        locateDevice(device.id).catch(() => {});
+        handleLocate();
       }, 5000);
     }
     return () => clearInterval(interval);
-  }, [device?.id, rtState?.live_tracking, rtState?.stolen_mode]);
+  }, [device?.id, rtState?.live_tracking, rtState?.stolen_mode, handleLocate]);
 
   useEffect(() => {
     if (latitude != null && longitude != null) {
       setLocationHistory(prev => {
         const last = prev[prev.length - 1];
         if (!last || last[0] !== latitude || last[1] !== longitude) {
-          return [...prev, [latitude, longitude]];
+          const newHistory: [number, number][] = [...prev, [latitude, longitude]];
+          // Limit history to prevent memory leak
+          return newHistory.length > 100 ? newHistory.slice(-100) as [number, number][] : newHistory;
         }
         return prev;
       });
@@ -207,11 +214,6 @@ export default function DashboardPage() {
       fetchDevices();
     } catch(e) { alert('كلمة المرور غير صحيحة'); }
     finally { setActionLoading(false); }
-  };
-
-  const handleLocate = async () => {
-    if (!device) return;
-    try { await locateDevice(device.id); } catch(e) { alert('فشل تحديد الموقع'); }
   };
 
   const handleStartSearch = async () => {
