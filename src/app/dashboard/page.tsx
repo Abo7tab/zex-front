@@ -286,9 +286,9 @@ export default function DashboardPage() {
 
   const filteredDevices = (devices || []).filter((d) => {
     if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    const name = (d?.name || d?.device_uid || d?.model || '').toLowerCase();
-    const model = (d?.model || d?.device_type || '').toLowerCase();
+    const q = String(searchQuery || '').toLowerCase();
+    const name = String(d?.name || d?.device_uid || d?.model || '').toLowerCase();
+    const model = String(d?.model || d?.device_type || '').toLowerCase();
     return name.includes(q) || model.includes(q);
   });
 
@@ -339,7 +339,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            {(filteredDevices?.length || 0) > 0 ? (filteredDevices || []).map((d) => (
+            {(filteredDevices?.length || 0) > 0 ? ((filteredDevices || [])).map((d) => (
               <div 
                 key={d.id} 
                 onClick={() => setDevice(d)}
@@ -610,7 +610,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex flex-col-reverse">
-              {(logs || []).length > 0 ? [...(logs || [])].reverse().map((log, index) => (
+              {(logs || []).length > 0 ? ([...(logs || [])]).reverse().map((log, index) => (
                 <div key={index} className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
                   <span className="text-slate-500 shrink-0 text-[10px]">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
                   <span className={`break-words ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
