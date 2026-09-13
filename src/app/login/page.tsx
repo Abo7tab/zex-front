@@ -396,21 +396,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="rounded-2xl p-3.5 bg-rose-50 border border-rose-200 text-rose-900 shadow-sm flex flex-row items-center justify-between gap-3 mt-4">
-            <div className="flex flex-row items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="w-5 h-5 animate-pulse" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-xs text-rose-900">طوارئ قصوى؟</span>
-                <span className="text-[11px] text-rose-700">SOS Emergency Override</span>
-              </div>
-            </div>
-            <button type="button" onClick={() => alert('تم إرسال نداء الاستغاثة بنجاح لكافة الوحدات!')} className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex flex-row items-center gap-1 flex-shrink-0">
-              <Radio className="w-4 h-4" />
-              <span>تفعيل SOS</span>
-            </button>
-          </div>
         </section>
       </main>
     </div>
