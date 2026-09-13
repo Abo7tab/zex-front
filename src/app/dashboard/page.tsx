@@ -25,6 +25,22 @@ import SettingsModal from '@/components/modals/SettingsModal';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono dir-rtl" dir="rtl">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <span className="text-sm font-bold text-slate-200">جاري تهيئة غرفة العمليات التكتيكية C4ISR...</span>
+        <span className="text-xs text-slate-500 mt-1">Securing connection to ZEX Node...</span>
+      </div>
+    );
+  }
+
   const [user, setUser] = useState<any>(null);
   const [device, setDevice] = useState<any>(null);
   const [devices, setDevices] = useState<any[]>([]);
@@ -262,7 +278,7 @@ export default function DashboardPage() {
               <User className="w-4 h-4" />
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="font-bold text-xs text-slate-800 truncate">{user?.name || 'Operator Alpha'}</span>
+              <span className="font-bold text-xs text-slate-800 truncate">{user?.name || 'Operator'}</span>
               <span className="text-[10px] text-slate-500 font-mono truncate">{user?.email || 'admin@c4isr.gov'}</span>
             </div>
           </div>
@@ -274,7 +290,7 @@ export default function DashboardPage() {
               <Smartphone className="w-4 h-4 text-blue-600" />
               الوحدات النشطة
             </span>
-            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px]">{devices.length} مقترن</span>
+            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[10px]">{devices?.length || 0} مقترن</span>
           </div>
 
           <div className="relative shrink-0">
@@ -289,7 +305,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            {filteredDevices.length > 0 ? filteredDevices.map((d) => (
+            {filteredDevices?.length > 0 ? (filteredDevices || []).map((d) => (
               <div 
                 key={d.id} 
                 onClick={() => setDevice(d)}
@@ -298,15 +314,15 @@ export default function DashboardPage() {
                 <div className="flex flex-row items-center justify-between mb-2">
                   <div className="flex flex-row items-center gap-2">
                     <Smartphone className={`w-4 h-4 ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <span className={`font-bold text-xs ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>{d.name}</span>
+                    <span className={`font-bold text-xs ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>{d?.name || 'Unknown Device'}</span>
                   </div>
                   {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>}
                 </div>
                 <div className="flex flex-row items-center justify-between text-[10px] font-mono">
-                  <span className={`${device?.id === d.id ? 'text-blue-600' : 'text-slate-500'} truncate mr-2`}>{d.model}</span>
+                  <span className={`${device?.id === d.id ? 'text-blue-600' : 'text-slate-500'} truncate mr-2`}>{d?.model || 'Generic Model'}</span>
                   <span className={`px-1.5 py-0.5 rounded flex flex-row items-center gap-1 shrink-0 ${d.battery_level > 20 ? (device?.id === d.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600') : 'bg-rose-100 text-rose-700'}`}>
                     <Battery className="w-3 h-3" />
-                    {d.battery_level ?? 0}%
+                    {d?.battery_level ?? 0}%
                   </span>
                 </div>
               </div>
@@ -346,7 +362,7 @@ export default function DashboardPage() {
             <div className="flex flex-row items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-mono">
               <Radar className="w-4 h-4 text-emerald-500" />
               <span className="text-slate-600 hidden sm:inline-block">NODE:</span>
-              <span className="font-bold text-slate-900">{device?.device_uid || 'WAITING...'}</span>
+              <span className="font-bold text-slate-900">{device?.device_uid || 'N/A'}</span>
             </div>
           </div>
 
@@ -567,7 +583,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent flex flex-col-reverse">
-              {logs.length > 0 ? [...logs].reverse().map((log, index) => (
+              {logs.length > 0 ? [...(logs || [])].reverse().map((log, index) => (
                 <div key={index} className="flex flex-row items-start gap-2 border-l-2 border-slate-700/50 pl-2">
                   <span className="text-slate-500 shrink-0 text-[10px]">[{new Date().toISOString().split('T')[1].slice(0,-1)}]</span>
                   <span className={`break-words ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>

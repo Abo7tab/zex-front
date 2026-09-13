@@ -5,47 +5,50 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const customIcon = L.divIcon({
-  className: 'custom-smartthings-pin',
-  html: `
-    <div style="
-      width: 48px;
-      height: 56px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.25));
-    ">
+let customIcon: any = null;
+if (typeof window !== 'undefined') {
+  customIcon = L.divIcon({
+    className: 'custom-smartthings-pin',
+    html: `
       <div style="
-        width: 42px;
-        height: 42px;
-        background: #ffffff;
-        border-radius: 50%;
+        width: 48px;
+        height: 56px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        border: 2px solid #000000;
+        filter: drop-shadow(0 10px 15px rgba(0,0,0,0.25));
       ">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-          <line x1="12" y1="18" x2="12.01" y2="18"></line>
-        </svg>
+        <div style="
+          width: 42px;
+          height: 42px;
+          background: #ffffff;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 2px solid #000000;
+        ">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+        </div>
+        <div style="
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 8px solid #000000;
+          margin-top: -1px;
+        "></div>
       </div>
-      <div style="
-        width: 0;
-        height: 0;
-        border-left: 6px solid transparent;
-        border-right: 6px solid transparent;
-        border-top: 8px solid #000000;
-        margin-top: -1px;
-      "></div>
-    </div>
-  `,
-  iconSize: [48, 56],
-  iconAnchor: [24, 56],
-  popupAnchor: [0, -56],
-});
+    `,
+    iconSize: [48, 56],
+    iconAnchor: [24, 56],
+    popupAnchor: [0, -56],
+  });
+}
 
 function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
@@ -65,6 +68,7 @@ interface MapProps {
 }
 
 export default function LeafletMap({ latitude, longitude, accuracy, deviceName, lastSeen, locationHistory }: MapProps) {
+  if (typeof window === 'undefined') return null;
   return (
     <MapContainer center={[latitude, longitude]} zoom={15} style={{ height: '100%', width: '100%', zIndex: 10 }}>
       <TileLayer
