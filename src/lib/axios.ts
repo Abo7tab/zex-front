@@ -1,9 +1,9 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import Cookies from 'js-cookie';
 import { useTerminalStore } from '../store/useTerminalStore';
 
 const api = axios.create({
-  baseURL: 'https://ab7tb.alwaysdata.net/api/v1',
+  baseURL: 'https://zex.alwaysdata.net/api/v1',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -65,4 +65,5 @@ api.interceptors.response.use(
 );
 
 export default api;
+
 

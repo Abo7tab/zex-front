@@ -18,11 +18,14 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('https://ab7tb.alwaysdata.net/api/v1/auth/login', {
-        email: identifier.trim(),
-        call_sign: identifier.trim(),
-        password: password.trim()
-      });
+      const payload: any = { password: password.trim() };
+      if (identifier.includes('@')) {
+        payload.email = identifier.trim();
+      } else {
+        payload.call_sign = identifier.trim();
+      }
+
+      const res = await axios.post('https://zex.alwaysdata.net/api/v1/auth/login', payload);
       
       const token = res.data?.token || res.data?.access_token || res.data?.data?.token;
       
@@ -39,7 +42,12 @@ export default function LoginPage() {
         setError('فشل الدخول - لم يتم استلام رمز تحقق من السيرفر');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'فشل الدخول - تحقق من البيانات');
+      if (err.response?.data?.errors) {
+         const firstErrorKey = Object.keys(err.response.data.errors)[0];
+         setError(err.response.data.errors[firstErrorKey][0]);
+      } else {
+         setError(err.response?.data?.message || 'فشل الدخول - تحقق من البيانات');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,6 +55,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0A0F16] p-4 font-sans" dir="rtl">
+      <style dangerouslySetInnerHTML={{__html: `
+        input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px #0A0F16 inset !important;
+            -webkit-text-fill-color: #00FA9A !important;
+        }
+      `}} />
       <div className="w-full max-w-md bg-[#111827] border border-[#00F0FF]/20 rounded-2xl p-8 shadow-[0_0_15px_rgba(0,240,255,0.1)]">
         <div className="mb-8 text-center border-b border-[#00F0FF]/20 pb-4">
           <h1 className="text-xl font-bold text-[#00F0FF] mb-2 tracking-widest">منظومة ZEX العسكرية</h1>
@@ -54,8 +68,9 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-[#FF3366]/10 border border-[#FF3366]/50 rounded-lg text-[#FF3366] text-sm font-mono text-left" dir="ltr">
-            [SYS_ERR]: {error}
+          <div className="mb-6 p-4 bg-[#FF3366]/10 border border-[#FF3366]/50 rounded-lg text-[#FF3366] text-sm font-mono flex items-center gap-2" dir="rtl">
+            <span className="font-bold shrink-0" dir="ltr">[SYS_ERR]:</span>
+            <span>{error}</span>
           </div>
         )}
 
@@ -111,10 +126,10 @@ export default function LoginPage() {
             className="w-full flex justify-center items-center py-3 px-4 border border-[#00F0FF]/50 rounded-lg shadow-[0_0_10px_rgba(0,240,255,0.2)] text-sm font-bold text-black bg-[#00F0FF] hover:bg-[#00FA9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0A0F16] focus:ring-[#00F0FF] disabled:opacity-50 disabled:cursor-not-allowed transition-colors tracking-widest font-mono"
           >
             {loading ? (
-              <>
+              <div className="flex items-center">
                 <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                جارٍ التحقق // AUTHENTICATING...
-              </>
+                <span>جارٍ التحقق // AUTHENTICATING...</span>
+              </div>
             ) : (
               'دخول // AUTHENTICATE'
             )}
