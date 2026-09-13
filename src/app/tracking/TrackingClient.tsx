@@ -89,10 +89,12 @@ export default function TrackingClient() {
   const displayedHistory = currentHistory.slice(0, displayedHistoryCount);
 
   function getTacticalName(d: any): string {
-    if (d?.name && d.name.trim()) return d.name.trim();
-    const uid = String(d?.device_uid || d?.uid || '');
-    if (!uid) return 'محطة استطلاع تكتيكية';
-    return `محطة استطلاع تكتيكية (#${uid.slice(-4).toUpperCase()})`;
+    if (!d) return 'ZEX Node';
+    if (d.name && d.name.trim()) return d.name.trim();
+    const brandModel = `${d.brand || ''} ${d.model || ''}`.trim();
+    if (brandModel) return brandModel;
+    const uid = String(d.device_uid || d.uid || '');
+    return uid ? `ZEX Node (${uid.slice(-4).toUpperCase()})` : 'ZEX Device';
   }
 
   return (
