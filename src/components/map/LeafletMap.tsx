@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -28,25 +28,36 @@ if (typeof window !== 'undefined') {
           align-items: center;
           justify-content: center;
           border: 2px solid #000000;
+          position: relative;
         ">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-          </svg>
+          <div style="
+            width: 32px;
+            height: 32px;
+            background: #2563eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+          </div>
         </div>
         <div style="
           width: 0;
           height: 0;
-          border-left: 6px solid transparent;
-          border-right: 6px solid transparent;
-          border-top: 8px solid #000000;
-          margin-top: -1px;
+          border-left: 8px solid transparent;
+          border-right: 8px solid transparent;
+          border-top: 14px solid #000000;
+          margin-top: -2px;
         "></div>
       </div>
     `,
     iconSize: [48, 56],
     iconAnchor: [24, 56],
-    popupAnchor: [0, -56],
+    popupAnchor: [0, -56]
   });
 }
 
@@ -58,7 +69,7 @@ const CenterMap = ({ lat, lng }: { lat: number, lng: number }) => {
   return null;
 };
 
-export default function LeafletMap({ 
+export default React.memo(function LeafletMap({ 
   latitude, 
   longitude, 
   accuracy, 
@@ -119,4 +130,4 @@ export default function LeafletMap({
       )}
     </MapContainer>
   );
-}
+});

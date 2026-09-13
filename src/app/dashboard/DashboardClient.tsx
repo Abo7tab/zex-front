@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
@@ -159,9 +159,17 @@ export default function DashboardClient() {
   function getTacticalName(d: any): string {
     if (d?.name && d.name.trim()) return d.name.trim();
     const uid = String(d?.device_uid || d?.uid || '');
-    if (!uid) return 'محطة استطلاع تكتيكية';
-    return `محطة استطلاع تكتيكية (#${uid.slice(-4).toUpperCase()})`;
+    const shortUid = uid ? uid.slice(-4).toUpperCase() : '----';
+    if (d?.model || d?.brand) {
+      const modelName = [d.brand, d.model].filter(Boolean).join(' ').trim();
+      if (modelName) return `${modelName} (#${shortUid})`;
+    }
+    return `وحدة ميدانية (#${shortUid})`;
   }
+
+  const memoizedDeviceMap = useMemo(() => (
+    <DeviceMap latitude={latitude} longitude={longitude} accuracy={accuracy} isOnline={isOnline} batteryLevel={batteryLevel} deviceId={device?.device_uid} history={locationHistory} />
+  ), [latitude, longitude, accuracy, isOnline, batteryLevel, device?.device_uid, locationHistory]);
 
   if (isLoading) {
     return (
@@ -337,18 +345,31 @@ export default function DashboardClient() {
                 {/* Map container */}
                 <div className="w-full min-h-[420px] h-[420px] rounded-xl overflow-hidden border border-slate-200 relative bg-slate-100">
                   <div className="absolute inset-0 z-0">
-                    <DeviceMap latitude={latitude} longitude={longitude} accuracy={accuracy} isOnline={isOnline} batteryLevel={batteryLevel} deviceId={device?.device_uid} history={locationHistory} />
+                    {memoizedDeviceMap}
                   </div>
 
                   {/* HUD overlays */}
                   <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex justify-between items-start pointer-events-none">
-                    <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-lg p-2 flex flex-col gap-0.5 font-mono text-[9px] sm:text-[10px]">
-                      <div className="flex items-center gap-1.5 text-slate-700 font-bold">
-                        <MapPin className="w-2.5 h-2.5 text-blue-600" />
-                        <span>{latitude.toFixed(4)}, {longitude.toFixed(4)}</span>
-                      </div>
-                      <div className="text-slate-500 flex items-center gap-1">
-                        <Crosshair className="w-2.5 h-2.5" />±{accuracy}m
+                    <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-lg p-2 flex flex-col gap-0.5 font-mono text-[9px] sm:text-[10px] pointer-events-auto">
+                      <div className="flex flex-row items-center gap-3 mb-1">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+                            <MapPin className="w-2.5 h-2.5 text-blue-600" />
+                            <span>{latitude.toFixed(4)}, {longitude.toFixed(4)}</span>
+                          </div>
+                          <div className="text-slate-500 flex items-center gap-1">
+                            <Crosshair className="w-2.5 h-2.5" />±{accuracy}m
+                          </div>
+                        </div>
+                        <a
+                          href={`https://www.google.com/maps?q=${latitude || 24.7136},${longitude || 46.6753}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-2 py-1 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 rounded text-slate-700 flex flex-row items-center justify-center gap-1 transition-colors"
+                        >
+                          <svg className="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                          خرائط جوجل
+                        </a>
                       </div>
                     </div>
                     <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-lg p-2 flex flex-col gap-0.5 font-mono text-[9px] sm:text-[10px] items-end">
