@@ -482,7 +482,7 @@ export default function DashboardPage() {
                 <div className="bg-white/90 backdrop-blur border border-slate-200/80 shadow-sm rounded-xl p-2.5 flex flex-col gap-1 font-mono text-[10px]">
                   <div className="flex flex-row items-center gap-2 text-slate-700 font-bold">
                     <MapPin className="w-3 h-3 text-blue-600" />
-                    <span>{latitude ? latitude.toFixed(6) : 'N/A'}, {longitude ? longitude.toFixed(6) : 'N/A'}</span>
+                    <span>{latitude ? Number(latitude).toFixed(6) : 'N/A'}, {longitude ? Number(longitude).toFixed(6) : 'N/A'}</span>
                   </div>
                   <div className="text-slate-500 flex flex-row items-center gap-1 text-[9px]">
                     <Crosshair className="w-3 h-3" />
