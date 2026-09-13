@@ -18,14 +18,12 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const payload: any = { password: password.trim() };
-      if (identifier.includes('@')) {
-        payload.email = identifier.trim();
-      } else {
-        payload.call_sign = identifier.trim();
-      }
+      const payload = { 
+        email: identifier.trim(), 
+        password: password.trim() 
+      };
 
-      const res = await axios.post('https://zex.alwaysdata.net/api/v1/auth/login', payload);
+      const res = await axios.post('https://zex.alwaysdata.net/api/auth/login', payload);
       
       const token = res.data?.token || res.data?.access_token || res.data?.data?.token;
       
