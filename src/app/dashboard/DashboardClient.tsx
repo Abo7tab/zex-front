@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs rounded-2xl">
+    <div className="w-full min-h-[420px] h-[420px] flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs rounded-2xl">
       <span>جاري تحميل الخريطة...</span>
     </div>
   ),
@@ -160,9 +160,8 @@ export default function DashboardClient() {
     if (!d) return 'جهاز تكتيكي';
     if (d.name && d.name.trim()) return d.name.trim();
     const uid = String(d.device_uid || d.uid || '');
-    const short = uid.replace(/^zex-uid-|^zex-/i, '').slice(0, 6).toUpperCase();
-    if (!short) return 'وحدة ميدانية';
-    return `الوحدة ${short}`;
+    if (!uid) return 'جهاز تكتيكي';
+    return `جهاز ميداني (${uid.slice(-4).toUpperCase()})`;
   }
 
   if (isLoading) {
@@ -336,8 +335,8 @@ export default function DashboardClient() {
 
               {/* ── Map ── */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-slate-200/80 shadow-sm relative">
-                {/* Map container — shorter on mobile */}
-                <div className="w-full h-[240px] sm:h-[320px] lg:h-[380px] rounded-xl overflow-hidden border border-slate-200 relative bg-slate-100">
+                {/* Map container */}
+                <div className="w-full min-h-[420px] h-[420px] rounded-xl overflow-hidden border border-slate-200 relative bg-slate-100">
                   <div className="absolute inset-0 z-0">
                     <DeviceMap latitude={latitude} longitude={longitude} accuracy={accuracy} isOnline={isOnline} batteryLevel={batteryLevel} deviceId={device?.device_uid} history={locationHistory} />
                   </div>
@@ -398,7 +397,7 @@ export default function DashboardClient() {
                   </div>
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-1 flex flex-col-reverse">
+                <div className="flex-1 overflow-y-auto space-y-1 flex flex-col-reverse font-mono text-left" dir="ltr">
                   {(logs.length > 0) ? [...logs].reverse().map((log, i) => (
                     <div key={i} className="flex items-start gap-2 border-l-2 border-slate-700/50 pl-2">
                       <span className="text-slate-500 shrink-0 text-[9px] sm:text-[10px]">[{new Date().toISOString().split('T')[1].slice(0, 8)}]</span>

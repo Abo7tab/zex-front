@@ -95,7 +95,7 @@ export default function TrackingMap({
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        attribution=""
       />
       
       {selectedDeviceId && <BoundsUpdater lat={centerLat} lng={centerLng} />}

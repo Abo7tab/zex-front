@@ -98,7 +98,7 @@ export default function LeafletMap({
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        attribution=""
       />
       <CenterMap lat={displayLat} lng={displayLng} />
       

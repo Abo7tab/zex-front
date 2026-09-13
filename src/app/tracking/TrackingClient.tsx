@@ -9,7 +9,7 @@ import dynamic from 'next/dynamic';
 const TrackingMap = dynamic(() => import('@/components/map/TrackingMap'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs rounded-2xl">
+    <div className="w-full min-h-[420px] h-[420px] lg:h-full flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs rounded-2xl">
       <span>جاري تهيئة نظام التتبع...</span>
     </div>
   ),
@@ -92,9 +92,8 @@ export default function TrackingClient() {
     if (!d) return 'جهاز تكتيكي';
     if (d.name && d.name.trim()) return d.name.trim();
     const uid = String(d.device_uid || d.uid || '');
-    const short = uid.replace(/^zex-uid-|^zex-/i, '').slice(0, 6).toUpperCase();
-    if (!short) return 'وحدة ميدانية';
-    return `الوحدة ${short}`;
+    if (!uid) return 'جهاز تكتيكي';
+    return `جهاز ميداني (${uid.slice(-4).toUpperCase()})`;
   }
 
   return (
@@ -117,7 +116,7 @@ export default function TrackingClient() {
 
       <div className="flex-1 flex flex-col lg:flex-row h-[calc(100vh-3.5rem)] overflow-hidden">
         {/* Main Map Area */}
-        <div className="flex-1 relative order-2 lg:order-1 h-[45vh] lg:h-full">
+        <div className="flex-1 relative order-2 lg:order-1 min-h-[420px] h-[420px] lg:h-full">
           <TrackingMap 
             devices={devices}
             rtStates={rtStates}
