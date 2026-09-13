@@ -10,7 +10,7 @@ const TrackingMap = dynamic(() => import('@/components/map/TrackingMap'), {
   ssr: false,
   loading: () => (
     <div className="w-full min-h-[420px] h-[420px] lg:h-full flex items-center justify-center bg-slate-100 text-slate-500 font-mono text-xs rounded-2xl">
-      <span>جاري تهيئة نظام التتبع...</span>
+      <span>Initializing Tactical Tracking System...</span>
     </div>
   ),
 });
@@ -98,7 +98,7 @@ export default function TrackingClient() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen flex flex-col font-sans" dir="rtl">
+    <div className="bg-slate-50 min-h-screen flex flex-col font-sans" dir="ltr">
       <header className="h-14 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4 sm:px-6 z-20 shrink-0 sticky top-0">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
@@ -111,7 +111,7 @@ export default function TrackingClient() {
         </div>
         <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors text-xs font-bold bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
           <ArrowRight className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">العودة للغرفة</span>
+          <span className="hidden sm:inline">Return to Command</span>
         </button>
       </header>
 
@@ -139,7 +139,7 @@ export default function TrackingClient() {
               {Object.keys(rtStates).filter(k => {
                 const t = new Date(rtStates[k]?.status?.last_heartbeat_at || 0).getTime();
                 return (Date.now() - t) < 120000;
-              }).length} متصل
+              }).length} Protocol: Active
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function TrackingClient() {
               <label className="text-xs font-bold text-slate-500 flex items-center gap-1.5"><Navigation className="w-3.5 h-3.5"/> الوحدة النشطة</label>
               <div className="relative">
                 <select 
-                  className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold rounded-xl pl-3 pr-10 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-800 text-sm font-bold rounded-xl pl-3 pl-10 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={selectedDevice?.id || ''}
                   onChange={(e) => {
                     const d = devices.find(x => x.id.toString() === e.target.value);
@@ -186,7 +186,7 @@ export default function TrackingClient() {
               <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col items-center justify-center gap-1">
                 <Wifi className={`w-4 h-4 ${isOnline ? 'text-emerald-500' : 'text-slate-400'}`} />
                 <span className="text-[10px] text-slate-500 font-bold mt-1">الاتصال</span>
-                <span className={`text-xs font-bold ${isOnline ? 'text-emerald-600' : 'text-slate-500'}`}>{isOnline ? 'متصل' : 'منقطع'}</span>
+                <span className={`text-xs font-bold ${isOnline ? 'text-emerald-600' : 'text-slate-500'}`}>{isOnline ? 'Protocol: Active' : 'Offline'}</span>
               </div>
             </div>
 

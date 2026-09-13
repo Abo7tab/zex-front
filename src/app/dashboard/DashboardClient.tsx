@@ -125,28 +125,28 @@ export default function DashboardClient() {
   }
   const fetchDevices = () => fetchDevicesInner();
 
-  const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); } catch { alert('فشل تحديد الموقع'); } }, [device?.id]);
+  const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); } catch { alert('فشل GPS Locate'); } }, [device?.id]);
   const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); fetchDevices(); } catch { alert('فشل التشغيل'); } };
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
-  const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); fetchDevices(); } catch { alert('كلمة المرور غير صحيحة'); } finally { setActionLoading(false); } };
+  const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); fetchDevices(); } catch { alert('Password غير صحيحة'); } finally { setActionLoading(false); } };
   const handleStartSearch  = async () => { if (!device) return; try { await startSearchMode(device.id, 30); setDevice((p:any)=>({...p,is_searching:true})); setRtState((p:any)=>p?{...p,is_searching:true}:null); fetchDevices(); } catch { alert('فشل بدء البحث'); } };
   const handleStopSearch   = async () => { if (!device) return; try { await stopSearchMode(device.id); setDevice((p:any)=>({...p,is_searching:false})); setRtState((p:any)=>p?{...p,is_searching:false}:null); fetchDevices(); } catch { alert('فشل إيقاف البحث'); } };
   const handleStartStolen  = async () => { if (!device) return; try { await markStolen(device.id); setDevice((p:any)=>({...p,is_stolen:true})); setRtState((p:any)=>p?{...p,is_stolen:true}:null); fetchDevices(); } catch { alert('فشل تفعيل وضع السرقة'); } };
   const handleStopStolenClick = () => { if (!device) return; setShowPinModal(true); };
   const handleMarkFound    = async () => { if (!device) return; setActionLoading(true); try { await markFound(device.id, pinInput.trim()); setShowPinModal(false); setPinInput(''); setDevice((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); setRtState((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); fetchDevices(); } catch { alert('رمز PIN غير صحيح'); } finally { setActionLoading(false); } };
   const handleDeleteClick  = () => { if (!device) return; setShowDeleteModal(true); };
-  const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('فشل المسح أو كلمة المرور غير صحيحة'); } finally { setActionLoading(false); } };
-  const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('كلمة المرور غير صحيحة أو فشل الحذف'); } finally { setActionLoading(false); } };
+  const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('فشل الWipe أو Password غير صحيحة'); } finally { setActionLoading(false); } };
+  const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Password غير صحيحة أو فشل الحذف'); } finally { setActionLoading(false); } };
 
   const commands = [
     { label: 'إنذار صاخب',    sub: '🔊 تفعيل الصفارة',      icon: <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'blue',    onClick: handleStartScream,    disabled: !!isScreaming || !device },
-    { label: 'إيقاف الإنذار', sub: '🔇 كتم الصوت',           icon: <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'slate',   onClick: handleStopScreamClick, disabled: !isScreaming || !device },
-    { label: 'تحديد الموقع',  sub: '📍 GPS مباشر',           icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'emerald', onClick: handleLocate,         disabled: !device },
+    { label: 'Silence Alert', sub: '🔇 كتم الصوت',           icon: <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'slate',   onClick: handleStopScreamClick, disabled: !isScreaming || !device },
+    { label: 'GPS Locate',  sub: '📍 GPS مباشر',           icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'emerald', onClick: handleLocate,         disabled: !device },
     { label: 'بحث BLE',        sub: '📶 رادار محلي',          icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'indigo',  onClick: handleStartSearch,    disabled: !!isSearching || !device },
     { label: 'إيقاف البحث',   sub: '🛑 تعطيل الرادار',       icon: <Bluetooth className="w-5 h-5 sm:w-6 sm:h-6" />,        color: 'slate',   onClick: handleStopSearch,     disabled: !isSearching || !device },
     { label: 'وضع السرقة',    sub: '🚨 بروتوكول الطوارئ',   icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />,       color: 'rose',    onClick: handleStartStolen,    disabled: !!isStolen || !device },
-    { label: 'إلغاء السرقة',  sub: '✅ استعادة الجهاز',      icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />,       color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
-    { label: 'مسح الجهاز',    sub: '🗑️ حذف نهائي',          icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'slate',   onClick: handleDeleteClick,    disabled: !device },
+    { label: 'Unmark Stolen',  sub: '✅ استعادة الجهاز',      icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />,       color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
+    { label: 'Wipe الجهاز',    sub: '🗑️ حذف نهائي',          icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'slate',   onClick: handleDeleteClick,    disabled: !device },
   ];
   const btnColors: Record<string,string> = {
     blue:    'bg-blue-50 text-blue-600',
@@ -171,7 +171,7 @@ export default function DashboardClient() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono" dir="rtl">
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono" dir="ltr">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
         <span className="text-sm font-bold text-slate-200">جاري تهيئة غرفة العمليات C4ISR...</span>
         <span className="text-xs text-slate-500 mt-1">Securing ZEX Node...</span>
@@ -207,7 +207,7 @@ export default function DashboardClient() {
         </div>
         <div className="relative">
           <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 pointer-events-none" />
-          <input type="text" placeholder="بحث..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full h-8 pr-8 pl-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+          <input type="text" placeholder="بحث..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full h-8 pr-8 pr-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
         </div>
         <div className="flex flex-col gap-1.5">
           {(filteredDevices.length > 0) ? filteredDevices.map(d => (
@@ -221,7 +221,7 @@ export default function DashboardClient() {
                       {getTacticalName(d)}
                     </span>
                   </div>
-                  <span className="text-[9px] text-slate-400 font-mono truncate pl-5">{d?.device_uid || ''}</span>
+                  <span className="text-[9px] text-slate-400 font-mono truncate pr-5">{d?.device_uid || ''}</span>
                 </div>
                 {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
               </div>
@@ -239,7 +239,7 @@ export default function DashboardClient() {
       {/* Bottom Actions */}
       <div className="p-3 border-t border-slate-100 flex flex-col gap-1 bg-slate-50/50">
         <button onClick={() => { setIsSettingsOpen(true); setShowMobileMenu(false); }} className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 py-2 px-2.5 hover:bg-white rounded-lg transition-colors">
-          <Settings className="w-3.5 h-3.5" />إعدادات النظام
+          <Settings className="w-3.5 h-3.5" />System Settings
         </button>
         <button onClick={() => { logout(); router.push('/login'); }} className="flex items-center gap-2 text-xs font-semibold text-rose-600 hover:text-rose-700 py-2 px-2.5 hover:bg-white rounded-lg transition-colors">
           <LogOut className="w-3.5 h-3.5" />تسجيل الخروج
@@ -249,7 +249,7 @@ export default function DashboardClient() {
   );
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen flex font-sans" dir="rtl">
+    <div className="bg-slate-50 text-slate-900 min-h-screen flex font-sans" dir="ltr">
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(#1e3a8a_1px,transparent_1px)] [background-size:24px_24px]" />
 
       {/* ── Desktop Sidebar ── */}
@@ -259,7 +259,7 @@ export default function DashboardClient() {
 
       {/* ── Mobile Drawer Overlay ── */}
       {showMobileMenu && (
-        <div className="fixed inset-0 z-40 lg:hidden" dir="rtl">
+        <div className="fixed inset-0 z-40 lg:hidden" dir="ltr">
           <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowMobileMenu(false)} />
           <aside className="absolute right-0 top-0 h-full w-72 bg-white shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200">
             <SidebarContent />
@@ -310,7 +310,7 @@ export default function DashboardClient() {
                 <ShieldAlert className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-2">لا توجد أجهزة مسجلة</h2>
-              <p className="text-sm text-slate-500 max-w-sm leading-relaxed">يرجى تسجيل جهاز من تطبيق الموبايل أو تسجيل الدخول بحساب يحتوي على أجهزة.</p>
+              <p className="text-sm text-slate-500 max-w-sm leading-relaxed">يرجى تسجيل جهاز من تطبيق الموبايل أو Operator Login بحساب يحتوي على أجهزة.</p>
             </div>
           ) : (
             <>
@@ -376,7 +376,7 @@ export default function DashboardClient() {
                         <Battery className={`w-2.5 h-2.5 ${batteryLevel > 20 ? 'text-emerald-500' : 'text-rose-500'}`} />
                       </div>
                       <div className={`flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        <Wifi className="w-2.5 h-2.5" />{isOnline ? 'متصل' : 'منقطع'}
+                        <Wifi className="w-2.5 h-2.5" />{isOnline ? 'Protocol: Active' : 'Offline'}
                       </div>
                     </div>
                   </div>
@@ -417,16 +417,16 @@ export default function DashboardClient() {
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-1 flex flex-col-reverse font-mono text-left" dir="ltr">
                   {(logs.length > 0) ? [...logs].reverse().map((log, i) => (
-                    <div key={i} className="flex items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                    <div key={i} className="flex items-start gap-2 border-l-2 border-slate-700/50 pr-2">
                       <span className="text-slate-500 shrink-0 text-[9px] sm:text-[10px]">[{new Date().toISOString().split('T')[1].slice(0, 8)}]</span>
                       <span className={`break-all text-[10px] sm:text-xs ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
                         <span className="text-blue-400">$ </span>{log}
                       </span>
                     </div>
                   )) : (
-                    <div className="flex items-start gap-2 border-l-2 border-slate-700/50 pl-2">
+                    <div className="flex items-start gap-2 border-l-2 border-slate-700/50 pr-2">
                       <span className="text-slate-500">[{new Date().toISOString().split('T')[1].slice(0, 8)}]</span>
-                      <span className="text-slate-400"><span className="text-blue-400">$ </span>Waiting for activity...</span>
+                      <span className="text-slate-400"><span className="text-blue-400">$ </span>Monitoring secure channels...</span>
                     </div>
                   )}
                 </div>
@@ -439,18 +439,18 @@ export default function DashboardClient() {
       {/* ── Modals ── */}
       {showPasswordModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="rtl">
+          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="ltr">
             <div className="w-3 h-1 rounded-full bg-slate-300 mx-auto mb-4 sm:hidden" />
             <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3"><VolumeX className="w-7 h-7" /></div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1.5">إيقاف الإنذار</h3>
-            <p className="text-slate-500 text-xs mb-5">أدخل كلمة المرور لإيقاف الإنذار.</p>
+            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Silence Alert</h3>
+            <p className="text-slate-500 text-xs mb-5">أدخل Password لSilence Alert.</p>
             <div className="relative mb-5">
-              <input type={showPassword ? 'text' : 'password'} value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none pr-10 font-mono text-left" dir="ltr" placeholder="••••••••••••" />
+              <input type={showPassword ? 'text' : 'password'} value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none pl-10 font-mono text-left" dir="ltr" placeholder="••••••••••••" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">إلغاء</button>
-              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white disabled:opacity-50 text-sm">تأكيد</button>
+              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">Cancel</button>
+              <button onClick={handleStopScream} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white disabled:opacity-50 text-sm">Confirm</button>
             </div>
           </div>
         </div>
@@ -458,17 +458,17 @@ export default function DashboardClient() {
 
       {showDeleteModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="rtl">
+          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="ltr">
             <div className="w-3 h-1 rounded-full bg-slate-300 mx-auto mb-4 sm:hidden" />
             <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3"><Trash2 className="w-7 h-7" /></div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1.5">تأكيد الحذف</h3>
-            <p className="text-slate-500 text-xs mb-5">سيتم مسح جميع بيانات الجهاز نهائياً.</p>
+            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Confirm الحذف</h3>
+            <p className="text-slate-500 text-xs mb-5">سيتم Wipe جميع بيانات الجهاز نهائياً.</p>
             <div className="relative mb-5">
-              <input type={showPassword ? 'text' : 'password'} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pr-10 font-mono text-left" dir="ltr" placeholder="••••••••••••" />
+              <input type={showPassword ? 'text' : 'password'} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pl-10 font-mono text-left" dir="ltr" placeholder="••••••••••••" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">إلغاء</button>
+              <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">Cancel</button>
               <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white disabled:opacity-50 text-sm">حذف</button>
             </div>
           </div>
@@ -477,15 +477,15 @@ export default function DashboardClient() {
 
       {showPinModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="rtl">
+          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="ltr">
             <div className="w-3 h-1 rounded-full bg-slate-300 mx-auto mb-4 sm:hidden" />
             <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3"><ShieldCheck className="w-7 h-7" /></div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1.5">إلغاء وضع السرقة</h3>
-            <p className="text-slate-500 text-xs mb-5">أدخل رمز PIN المكون من 6 أرقام.</p>
+            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Cancel وضع السرقة</h3>
+            <p className="text-slate-500 text-xs mb-5">أدخل رمز PIN المكون من 6 digits.</p>
             <input type="text" maxLength={6} value={pinInput} onChange={e => setPinInput(e.target.value.replace(/\D/g, ''))} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 text-center tracking-[0.5em] font-mono text-2xl mb-5 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="000000" />
             <div className="flex gap-3">
-              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">إلغاء</button>
-              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white disabled:opacity-50 text-sm">تأكيد</button>
+              <button onClick={() => setShowPinModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">Cancel</button>
+              <button onClick={handleMarkFound} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-blue-600 text-white disabled:opacity-50 text-sm">Confirm</button>
             </div>
           </div>
         </div>
@@ -493,18 +493,18 @@ export default function DashboardClient() {
 
       {showUnregisterModal && (
         <div className="fixed inset-0 bg-slate-900/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 backdrop-blur-sm">
-          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="rtl">
+          <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="ltr">
             <div className="w-3 h-1 rounded-full bg-slate-300 mx-auto mb-4 sm:hidden" />
             <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3"><Trash2 className="w-7 h-7" /></div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1.5">إلغاء تسجيل الجهاز</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Cancel تسجيل الجهاز</h3>
             <p className="text-slate-500 text-xs mb-5">لا يمكن التراجع عن هذا الإجراء.</p>
             <div className="relative mb-5">
-              <input type={showPassword ? 'text' : 'password'} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pr-10 font-mono text-left" dir="ltr" placeholder="••••••••••••" />
+              <input type={showPassword ? 'text' : 'password'} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pl-10 font-mono text-left" dir="ltr" placeholder="••••••••••••" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => { setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput(''); }} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">إلغاء</button>
-              <button onClick={handleUnregisterDevice} disabled={actionLoading || !deletePasswordInput} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white disabled:opacity-50 text-sm">تأكيد</button>
+              <button onClick={() => { setShowUnregisterModal(false); setUnregisterTarget(null); setDeletePasswordInput(''); }} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">Cancel</button>
+              <button onClick={handleUnregisterDevice} disabled={actionLoading || !deletePasswordInput} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white disabled:opacity-50 text-sm">Confirm</button>
             </div>
           </div>
         </div>

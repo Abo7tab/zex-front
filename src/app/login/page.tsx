@@ -28,7 +28,7 @@ export default function LoginPage() {
     try {
       if (isRegister) {
         if (password !== passwordConfirm) {
-          setError('كلمة المرور وتأكيد كلمة المرور غير متطابقين');
+          setError('Password وConfirm Password غير متطابقين');
           setLoading(false);
           return;
         }
@@ -91,14 +91,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-center items-center py-6 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white relative overflow-x-hidden font-sans" dir="rtl">
+    <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col justify-center items-center py-6 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white relative overflow-x-hidden font-sans" dir="ltr">
       
       <div className="fixed inset-0 pointer-events-none opacity-[0.035] bg-[radial-gradient(#1e3a8a_1px,transparent_1px)] [background-size:24px_24px]"></div>
       
       <header className="w-full max-w-7xl mx-auto flex flex-row items-center justify-between py-3 px-2 mb-4 text-xs font-semibold text-slate-500 z-10">
         <div className="flex flex-row items-center gap-2">
           <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100 animate-pulse"></span>
-          <span className="tracking-wide">الشبكة الدفاعية الموحدة C4ISR // مشفرة بنظام كوانتومي</span>
+          <span className="tracking-wide">UNIFIED DEFENSE NETWORK // QUANTUM ENCRYPTEDي</span>
         </div>
         <div className="hidden sm:flex flex-row items-center gap-4 font-mono text-[11px] text-slate-400">
           <span className="text-blue-600 font-bold">STATUS: OPERATIONAL</span>
@@ -111,13 +111,13 @@ export default function LoginPage() {
           <div className="flex flex-col gap-4">
             <div className="inline-flex flex-row items-center gap-2 self-start px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 font-bold text-xs">
               <Shield className="w-4 h-4 text-blue-600" />
-              <span>منظومة الدفاع والتحكم الميداني C4ISR</span>
+              <span>C4ISR Tactical Command & Control</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug">
               تحكم فوري، تتبع دقيق، وحماية قصوى لهواتفك الذكية
             </h1>
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
-              لوحة التحكم التكتيكية الموحدة لإدارة وتأمين الأجهزة والاتصالات المشفرة بأعلى معايير الحماية السيبرانية العسكرية وتتبع الحركة الفورية مع استجابة دفاعية صفرية.
+              Unified tactical dashboard for managing and securing nodes with military-grade cyber protection and instant zero-day defense response.
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export default function LoginPage() {
               <div className="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex flex-col items-center gap-0.5">
                 <span className="text-[11px] text-slate-400 font-sans flex flex-row items-center justify-center gap-1 w-full">
                   <Crosshair className="w-3 h-3 text-emerald-400" />
-                  دقة التحديد
+                  Tracking Precision
                 </span>
                 <span className="text-lg font-bold text-white">4m</span>
                 <span className="text-[10px] text-emerald-400">Dual GPS</span>
@@ -179,7 +179,7 @@ export default function LoginPage() {
               <div className="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex flex-col items-center gap-0.5">
                 <span className="text-[11px] text-slate-400 font-sans flex flex-row items-center justify-center gap-1 w-full">
                   <Key className="w-3 h-3 text-blue-400" />
-                  قناة التشفير
+                  Encryption Channel
                 </span>
                 <span className="text-lg font-bold text-white">AES</span>
                 <span className="text-[10px] text-blue-400">Quantum</span>
@@ -187,10 +187,10 @@ export default function LoginPage() {
               <div className="bg-slate-800/60 border border-slate-700/60 p-3 rounded-xl flex flex-col items-center gap-0.5">
                 <span className="text-[11px] text-slate-400 font-sans flex flex-row items-center justify-center gap-1 w-full">
                   <Gauge className="w-3 h-3 text-amber-400" />
-                  الاستجابة
+                  Response Time
                 </span>
                 <span className="text-lg font-bold text-white">12ms</span>
-                <span className="text-[10px] text-amber-400">استجابة صفرية</span>
+                <span className="text-[10px] text-amber-400">Zero Latency</span>
               </div>
             </div>
 
@@ -225,12 +225,12 @@ export default function LoginPage() {
               </div>
               <div className="flex flex-col">
                 <span className="font-extrabold text-lg text-slate-900 tracking-tight leading-tight">ZEX MILITARY</span>
-                <span className="text-xs font-semibold text-slate-500">C4ISR Security Systems</span>
+                <span className="text-xs font-semibold text-slate-500">Encrypted Operations</span>
               </div>
             </div>
             <div className="inline-flex flex-row items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>نظام الحماية الفوري نشط</span>
+              <span>ACTIVE TACTICAL SHIELD</span>
             </div>
           </div>
 
@@ -259,13 +259,13 @@ export default function LoginPage() {
               onClick={() => toggleAuthMode('login')} 
               className={`py-2.5 rounded-xl transition-all duration-200 text-center flex flex-row items-center justify-center gap-1.5 ${!isRegister ? 'bg-white text-blue-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-800'}`} type="button">
               <LogIn className="w-4 h-4" />
-              <span>تسجيل الدخول</span>
+              <span>Operator Login</span>
             </button>
             <button 
               onClick={() => toggleAuthMode('register')} 
               className={`py-2.5 rounded-xl transition-all duration-200 text-center flex flex-row items-center justify-center gap-1.5 ${isRegister ? 'bg-white text-blue-600 shadow-sm border border-slate-200/60' : 'text-slate-500 hover:text-slate-800'}`} type="button">
               <UserPlus className="w-4 h-4" />
-              <span>إنشاء حساب</span>
+              <span>Register</span>
             </button>
           </div>
 
@@ -274,7 +274,7 @@ export default function LoginPage() {
               <>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-bold text-slate-700 flex flex-row items-center justify-between">
-                    <span>البريد الإلكتروني</span>
+                    <span>Operator Email</span>
                   </label>
                   <div className="relative flex items-center">
                     <Mail className="absolute right-3.5 text-slate-400 w-5 h-5 pointer-events-none" />
@@ -291,7 +291,7 @@ export default function LoginPage() {
 
                 <div className="flex flex-col gap-1.5">
                   <div className="flex flex-row items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700">كلمة المرور</label>
+                    <label className="text-xs font-bold text-slate-700">Password</label>
                   </div>
                   <div className="relative flex items-center">
                     <Lock className="absolute right-3.5 text-slate-400 w-5 h-5 pointer-events-none" />
@@ -313,54 +313,54 @@ export default function LoginPage() {
               <div className="flex flex-col gap-3.5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">الاسم</label>
+                    <label className="text-xs font-bold text-slate-700">Operator Name</label>
                     <div className="relative flex items-center">
                       <User className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="الاسم" />
+                      <input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="Operator Name" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold text-slate-700">الهاتف</label>
                     <div className="relative flex items-center">
                       <Phone className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type="tel" dir="ltr" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full h-10 pr-9 pl-3 text-left rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="+966" />
+                      <input type="tel" dir="ltr" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full h-10 pl-9 pr-3 text-left rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="+966" />
                     </div>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">البريد الإلكتروني</label>
+                    <label className="text-xs font-bold text-slate-700">Operator Email</label>
                     <div className="relative flex items-center">
                       <Mail className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type="email" dir="ltr" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm text-left" placeholder="unit@mod.gov" />
+                      <input type="email" dir="ltr" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} className="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm text-left" placeholder="unit@mod.gov" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-xs font-bold text-slate-700">رمز الأمان (PIN)</label>
                     <div className="relative flex items-center">
                       <KeyRound className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type="password" required maxLength={6} pattern="[0-9]{6}" value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="w-full h-10 pr-9 pl-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="6 أرقام" />
+                      <input type="password" required maxLength={6} pattern="[0-9]{6}" value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="6 digits" />
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">كلمة المرور</label>
+                    <label className="text-xs font-bold text-slate-700">Password</label>
                     <div className="relative flex items-center">
                       <Lock className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full h-10 pr-9 pl-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••" />
+                      <input type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full h-10 pl-9 pr-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-2.5 text-slate-400 hover:text-slate-700 flex items-center">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">تأكيد المرور</label>
+                    <label className="text-xs font-bold text-slate-700">Confirm المرور</label>
                     <div className="relative flex items-center">
                       <Lock className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
-                      <input type={showPassword ? "text" : "password"} required value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} className="w-full h-10 pr-9 pl-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••" />
+                      <input type={showPassword ? "text" : "password"} required value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} className="w-full h-10 pl-9 pr-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••" />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-2.5 text-slate-400 hover:text-slate-700 flex items-center">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -374,7 +374,7 @@ export default function LoginPage() {
               <div className="flex flex-row items-center justify-between text-xs text-slate-600 py-1">
                 <label className="inline-flex flex-row items-center gap-2 cursor-pointer select-none">
                   <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300" />
-                  <span>تذكر الجهاز</span>
+                  <span>Remember Node</span>
                 </label>
               </div>
             )}
@@ -386,12 +386,12 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>جاري التحقق...</span>
+                  <span>Authenticating...</span>
                 </>
               ) : (
                 <>
                   {isRegister ? <UserPlus className="w-5 h-5" /> : <Key className="w-5 h-5" />}
-                  <span>{isRegister ? 'إنشاء حساب' : 'دخول آمن'}</span>
+                  <span>{isRegister ? 'Register' : 'Secure Login'}</span>
                 </>
               )}
             </button>

@@ -10,7 +10,7 @@ function SeverityBadge({ s }: { s: string }) {
     warning: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
     info: 'bg-blue-100 text-blue-700 border border-blue-200',
   };
-  const labels: Record<string, string> = { critical: 'حرج', warning: 'تحذير', info: 'معلومات' };
+  const labels: Record<string, string> = { critical: 'Critical', warning: 'Warning', info: 'Info' };
   return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${map[s] || map.info}`}>{labels[s] || s}</span>;
 }
 
@@ -82,7 +82,7 @@ export default function LogsClient() {
   const lastTime = logs.length > 0 ? new Date(logs[0].timestamp).toLocaleTimeString('ar-SA') : '-';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans" dir="rtl">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans" dir="ltr">
       
       {/* Header */}
       <header className="h-14 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-4 sm:px-6 z-20 shrink-0 sticky top-0">
@@ -90,12 +90,12 @@ export default function LogsClient() {
           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
             <Shield className="w-4 h-4" />
           </div>
-          <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight hidden sm:block">ZEX SECURITY — سجل التدقيق الجنائي</span>
-          <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight sm:hidden">سجل التدقيق</span>
+          <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight hidden sm:block">ZEX SECURITY — FORENSIC AUDIT LOG</span>
+          <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight sm:hidden">Audit Log</span>
         </div>
         <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors text-xs font-bold bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
           <ArrowRight className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">العودة للغرفة</span>
+          <span className="hidden sm:inline">Return to Command</span>
         </button>
       </header>
 
@@ -104,15 +104,15 @@ export default function LogsClient() {
         {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex flex-col justify-center">
-            <span className="text-xs text-slate-500 font-bold mb-1">إجمالي الأحداث</span>
+            <span className="text-xs text-slate-500 font-bold mb-1">Total Events</span>
             <span className="text-2xl font-black text-slate-800">{logs.length}</span>
           </div>
           <div className="bg-red-50 border border-red-200 shadow-sm rounded-2xl p-4 flex flex-col justify-center">
-            <span className="text-xs text-red-600 font-bold mb-1">الأحداث الحرجة</span>
+            <span className="text-xs text-red-600 font-bold mb-1">Critical Events</span>
             <span className="text-2xl font-black text-red-700">{criticalCount}</span>
           </div>
           <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-4 flex flex-col justify-center">
-            <span className="text-xs text-slate-500 font-bold mb-1">آخر نشاط مسجل</span>
+            <span className="text-xs text-slate-500 font-bold mb-1">Latest Activity</span>
             <span className="text-lg font-black text-slate-800 font-mono mt-1">{lastTime}</span>
           </div>
         </div>
@@ -123,19 +123,19 @@ export default function LogsClient() {
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
-              placeholder="بحث: معرف الجهاز، المشغل، نوع العملية..." 
+              placeholder="Search: Node UID, Operator, Operation Type..." 
               value={search}
               onChange={e => {setSearch(e.target.value); setPage(1);}}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pr-10 pl-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pl-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           
           <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto shrink-0">
             {[
-              { id: 'all', label: 'الكل' },
-              { id: 'critical', label: 'حرج' },
-              { id: 'warning', label: 'تحذير' },
-              { id: 'info', label: 'معلومات' },
+              { id: 'all', label: 'All' },
+              { id: 'critical', label: 'Critical' },
+              { id: 'warning', label: 'Warning' },
+              { id: 'info', label: 'Info' },
             ].map(tab => (
               <button 
                 key={tab.id}
@@ -154,18 +154,18 @@ export default function LogsClient() {
             <table className="w-full text-right text-sm">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-xs">
                 <tr>
-                  <th className="px-4 py-3">الوقت والتاريخ</th>
-                  <th className="px-4 py-3">العقدة / الجهاز</th>
-                  <th className="px-4 py-3">الخطورة</th>
-                  <th className="px-4 py-3">نوع العملية</th>
-                  <th className="px-4 py-3">المشغل</th>
-                  <th className="px-4 py-3 w-16">التفاصيل</th>
+                  <th className="px-4 py-3">Timestamp</th>
+                  <th className="px-4 py-3">Node / Device</th>
+                  <th className="px-4 py-3">Severity</th>
+                  <th className="px-4 py-3">Operation Type</th>
+                  <th className="px-4 py-3">Operator</th>
+                  <th className="px-4 py-3 w-16">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {paginatedLogs.length > 0 ? (
                   paginatedLogs.map((log) => (
-                    <tr key={log.id} className={`hover:bg-slate-50 transition-colors ${log.severity === 'critical' ? 'border-r-4 border-r-red-500 bg-red-50/20' : log.severity === 'warning' ? 'border-r-4 border-r-yellow-400 bg-yellow-50/20' : 'border-r-4 border-r-transparent'}`}>
+                    <tr key={log.id} className={`hover:bg-slate-50 transition-colors ${log.severity === 'critical' ? 'border-l-4 border-l-red-500 bg-red-50/20' : log.severity === 'warning' ? 'border-l-4 border-l-yellow-400 bg-yellow-50/20' : 'border-l-4 border-l-transparent'}`}>
                       <td className="px-4 py-3 font-mono text-xs text-slate-500" dir="ltr">
                         {new Date(log.timestamp).toLocaleString('en-GB')}
                       </td>
@@ -196,7 +196,7 @@ export default function LogsClient() {
                     <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Shield className="w-8 h-8 opacity-20" />
-                        <span className="text-sm font-bold">لا توجد سجلات مطابقة للبحث</span>
+                        <span className="text-sm font-bold">No forensic records match current query</span>
                       </div>
                     </td>
                   </tr>
@@ -233,12 +233,12 @@ export default function LogsClient() {
       {/* JSON Modal */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] overflow-hidden" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] overflow-hidden" dir="ltr">
             
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-slate-50">
               <div className="flex items-center gap-2 text-slate-800">
                 <Code className="w-5 h-5 text-blue-600" />
-                <h3 className="font-bold">التفاصيل الجنائية للحدث (Payload)</h3>
+                <h3 className="font-bold">Details الجنائية للحدث (Payload)</h3>
               </div>
               <button 
                 onClick={() => setSelectedLog(null)}
@@ -265,7 +265,7 @@ export default function LogsClient() {
                 className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors"
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? 'تم النسخ!' : 'نسخ النص'}
+                {copied ? 'Copied!' : 'Copy Payload'}
               </button>
             </div>
             
