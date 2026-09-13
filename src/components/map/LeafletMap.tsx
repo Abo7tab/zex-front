@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+
 
 let customIcon: any = null;
 if (typeof window !== 'undefined') {

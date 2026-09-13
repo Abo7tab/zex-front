@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import Cookies from 'js-cookie';
 import { useTerminalStore } from '../store/useTerminalStore';
 
@@ -11,9 +11,11 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = Cookies.get('zex_token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  if (typeof window !== 'undefined') {
+    const token = Cookies.get('zex_token') || localStorage.getItem('zex_token');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   
   (config as any).metadata = { startTime: new Date() };
@@ -21,7 +23,10 @@ api.interceptors.request.use((config) => {
   const method = config.method?.toUpperCase() || 'GET';
   const url = config.url || '';
   const time = new Date().toISOString().substring(11, 19) + 'Z';
-  useTerminalStore.getState().addLog(`[${time}] SYS//REQ > [${method}] ${url}`);
+  
+  if (typeof window !== 'undefined') {
+    useTerminalStore.getState().addLog(`[${time}] SYS//REQ > [${method}] ${url}`);
+  }
   
   return config;
 });
@@ -33,7 +38,9 @@ api.interceptors.response.use(
     const method = config.method?.toUpperCase() || 'GET';
     const time = new Date().toISOString().substring(11, 19) + 'Z';
     
-    useTerminalStore.getState().addLog(`[${time}] SYS//RES > [200 OK] (${duration}ms) ${config.url}`);
+    if (typeof window !== 'undefined') {
+      useTerminalStore.getState().addLog(`[${time}] SYS//RES > [200 OK] (${duration}ms) ${config.url}`);
+    }
     
     return response;
   },
@@ -44,15 +51,18 @@ api.interceptors.response.use(
     const status = error.response?.status || 'ERR';
     const msg = error.response?.data?.message || error.message;
     
-    if (config) {
-        useTerminalStore.getState().addLog(`[${time}] SYS//ERR > [${status}] (${duration}ms) ${config.url} -> ${msg}`);
-    } else {
-        useTerminalStore.getState().addLog(`[${time}] SYS//ERR > ${msg}`);
+    if (typeof window !== 'undefined') {
+      if (config) {
+          useTerminalStore.getState().addLog(`[${time}] SYS//ERR > [${status}] (${duration}ms) ${config.url} -> ${msg}`);
+      } else {
+          useTerminalStore.getState().addLog(`[${time}] SYS//ERR > ${msg}`);
+      }
     }
 
     if (error.response?.status === 401) {
       Cookies.remove('zex_token');
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('zex_token');
         window.location.href = '/login';
       }
     } else {
@@ -65,6 +75,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-
-
