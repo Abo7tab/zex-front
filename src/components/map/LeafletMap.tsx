@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -52,13 +52,13 @@ if (typeof window !== 'undefined') {
 
 function MapUpdater({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
-  const flyToLocation = useCallback(() => {
-    map.flyTo([lat, lng], map.getZoom());
-  }, [lat, lng, map]);
-
+  
   useEffect(() => {
-    flyToLocation();
-  }, [flyToLocation]);
+    if (map && lat && lng) {
+      map.flyTo([lat, lng], map.getZoom());
+    }
+  }, [lat, lng, map]);
+  
   return null;
 }
 

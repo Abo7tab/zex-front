@@ -22,9 +22,16 @@ export const subscribeToDeviceState = (deviceUid: string, callback: (data: any) 
     const db = getFirebaseDb();
     if (!db) return () => {};
     const deviceRef = ref(db, `devices/${deviceUid}`);
+    let lastData: any = null;
+    
     const unsubscribe = onValue(deviceRef, (snapshot) => {
       if (snapshot.exists()) {
-        callback(snapshot.val());
+        const newData = snapshot.val();
+        // Only callback if data actually changed
+        if (JSON.stringify(newData) !== JSON.stringify(lastData)) {
+          lastData = newData;
+          callback(newData);
+        }
       }
     }, (error) => {
       console.warn('Firebase read warning:', error);

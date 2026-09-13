@@ -48,7 +48,7 @@ export default function DashboardPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const logs = useTerminalStore((state) => state.logs);
+  const logs = useTerminalStore((state) => state.logs.slice(-50)); // Limit logs to prevent memory issues
   const router = useRouter();
   const [tick, setTick] = useState(0);
 
@@ -125,7 +125,15 @@ export default function DashboardPage() {
     if (device?.device_uid && typeof window !== 'undefined') {
       try {
         const unsub = subscribeToDeviceState(device.device_uid, (data: any) => {
-          setRtState(data);
+          // Prevent infinite loop by only updating if data actually changed
+          setRtState((prev: any) => {
+            const dataStr = JSON.stringify(data);
+            const prevStr = JSON.stringify(prev);
+            if (dataStr !== prevStr) {
+              return data;
+            }
+            return prev;
+          });
         });
         return () => {
           if (typeof unsub === 'function') unsub();
@@ -157,29 +165,31 @@ export default function DashboardPage() {
     }
   }
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (device?.id && (rtState?.live_tracking || rtState?.stolen_mode)) {
-      interval = setInterval(() => {
-        handleLocate();
-      }, 5000);
-    }
-    return () => clearInterval(interval);
-  }, [device?.id, rtState?.live_tracking, rtState?.stolen_mode, handleLocate]);
+  // Disabled temporarily to debug freeze
+  // useEffect(() => {
+  //   let interval: NodeJS.Timeout;
+  //   if (device?.id && (rtState?.live_tracking || rtState?.stolen_mode)) {
+  //     interval = setInterval(() => {
+  //       handleLocate();
+  //     }, 5000);
+  //   }
+  //   return () => clearInterval(interval);
+  // }, [device?.id, rtState?.live_tracking, rtState?.stolen_mode, handleLocate]);
 
-  useEffect(() => {
-    if (latitude != null && longitude != null) {
-      setLocationHistory(prev => {
-        const last = prev[prev.length - 1];
-        if (!last || last[0] !== latitude || last[1] !== longitude) {
-          const newHistory: [number, number][] = [...prev, [latitude, longitude]];
-          // Limit history to prevent memory leak
-          return newHistory.length > 100 ? newHistory.slice(-100) as [number, number][] : newHistory;
-        }
-        return prev;
-      });
-    }
-  }, [latitude, longitude]);
+  // Disabled temporarily to debug freeze
+  // useEffect(() => {
+  //   if (latitude != null && longitude != null) {
+  //     setLocationHistory(prev => {
+  //       const last = prev[prev.length - 1];
+  //       if (!last || last[0] !== latitude || last[1] !== longitude) {
+  //         const newHistory: [number, number][] = [...prev, [latitude, longitude]];
+  //         // Limit history to prevent memory leak
+  //         return newHistory.length > 100 ? newHistory.slice(-100) as [number, number][] : newHistory;
+  //       }
+  //       return prev;
+  //     });
+  //   }
+  // }, [latitude, longitude]);
 
   if (!mounted || isLoading) {
     return (
