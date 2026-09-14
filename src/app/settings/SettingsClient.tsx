@@ -49,7 +49,7 @@ export default function SettingsClient() {
       // If there's an actual endpoint in backend for updating profile, e.g. PUT /auth/profile
       await api.put('/auth/profile', { name, email, phone });
       alert('Operator profile updated successfully.');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.message || 'Failed to update profile. Ensure backend is deployed.');
     } finally {

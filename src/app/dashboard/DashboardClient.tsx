@@ -6,7 +6,7 @@ import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMo
 import { subscribeToDeviceState } from '@/lib/firebase';
 import { useTerminalStore } from '@/store/useTerminalStore';
 import { Shield, Zap, User, Smartphone, Search, AlertTriangle, ShieldCheck,
-  Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings,
+  Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings, Map, Activity,
   Eye, EyeOff, LogOut, Radar, MapPin, Crosshair,
   Bluetooth, BluetoothSearching, CheckCircle,
   Terminal, ShieldAlert
@@ -262,6 +262,12 @@ export default function DashboardClient() {
 
       {/* Bottom Actions */}
       <div className="p-3 border-t border-slate-100 flex flex-col gap-1 bg-slate-50/50">
+                <button onClick={() => { router.push('/dashboard/mesh-map'); setShowMobileMenu(false); }} className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 py-2 px-2.5 hover:bg-white rounded-lg transition-colors">
+          <Map className="w-3.5 h-3.5" />Offline Mesh Map
+        </button>
+        <button onClick={() => { router.push('/logs'); setShowMobileMenu(false); }} className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 py-2 px-2.5 hover:bg-white rounded-lg transition-colors">
+          <Activity className="w-3.5 h-3.5" />Fleet Activities
+        </button>
         <button onClick={() => { router.push('/settings'); setShowMobileMenu(false); }} className="flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-blue-600 py-2 px-2.5 hover:bg-white rounded-lg transition-colors">
           <Settings className="w-3.5 h-3.5" />System Settings
         </button>
