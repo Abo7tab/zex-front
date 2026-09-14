@@ -148,7 +148,7 @@ export default function DashboardClient() {
     setNow(Date.now());
   };
 
-  const handleTogglePowerSaver = async () => { if (!device) return; setActionLoading(true); try { await togglePowerSaver(device.id, !isPowerSaver); setDevice((p:any)=>({...p,is_power_saver:!isPowerSaver})); setRtState((p:any)=>p?{...p,is_power_saver:!isPowerSaver}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert("Failed to toggle power saver"); } finally { setActionLoading(false); } };
+  const handleTogglePowerSaver = async () => { if (!device) return; setActionLoading(true); try { await togglePowerSaver(device.id, !isPowerSaver); setDevice((p:any)=>({...p,is_power_saver:!isPowerSaver})); setRtState((p:any)=>p?{...p,is_power_saver:!isPowerSaver}:null); optimisticPing(); await fetchDevicesInner(); } catch (err: any) { alert("Failed to toggle power saver: " + (err.response?.data?.message || err.message || "Server Error")); } finally { setActionLoading(false); } };
     const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); optimisticPing(); } catch { alert('Failed to execute GPS Locate'); } }, [device?.id]);
   const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to execute Scream Alert'); } };
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
