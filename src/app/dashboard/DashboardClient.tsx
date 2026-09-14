@@ -103,6 +103,7 @@ export default function DashboardClient() {
   const latitude: number  = rawLat ? Number(rawLat) : 24.7136;
   const longitude: number = rawLng ? Number(rawLng) : 46.6753;
   const accuracy: number  = rawAcc ? Number(rawAcc) : 0;
+  const relaySource = statusObj.relay_source ?? locObj.relay_source ?? device?.relay_source ?? device?.last_location?.relay_source;
 
   useEffect(() => {
     setLocationHistory(prev => {
