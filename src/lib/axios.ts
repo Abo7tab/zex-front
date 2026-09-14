@@ -13,7 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
-      const token = Cookies.get('zex_token') || localStorage.getItem('zex_token') || Cookies.get('zex_auth_token');
+      const token = Cookies.get('zex_token') || localStorage.getItem('zex_token') || Cookies.get('zex_auth_token') || localStorage.getItem('zex_auth_token');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -64,8 +64,10 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401) {
       Cookies.remove('zex_token');
+      Cookies.remove('zex_auth_token');
       if (typeof window !== 'undefined') {
         localStorage.removeItem('zex_token');
+        localStorage.removeItem('zex_auth_token');
         window.location.href = '/login';
       }
     } else {

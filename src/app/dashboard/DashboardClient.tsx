@@ -72,7 +72,7 @@ export default function DashboardClient() {
 
     getMe()
       .then((data) => { setUser(data?.data || data); fetchDevicesInner(); })
-      .catch(() => { localStorage.removeItem('zex_token'); localStorage.removeItem('zex_auth_token'); router.replace('/login'); })
+      .catch(() => { localStorage.removeItem('zex_token'); localStorage.removeItem('zex_auth_token'); document.cookie = 'zex_token=; Max-Age=0; path=/'; document.cookie = 'zex_auth_token=; Max-Age=0; path=/'; router.replace('/login'); })
       .finally(() => setIsLoading(false));
 
     const t = setTimeout(() => setIsLoading(false), 3000);
@@ -119,7 +119,7 @@ export default function DashboardClient() {
     const isPowerSaver = statusObj.is_power_saver ?? device?.is_power_saver;
   const batteryLevel = Number(statusObj.battery_level ?? device?.battery_level ?? 0);
 
-  const isOnline = isDeviceOnline(statusObj || device);
+  const isOnline = isDeviceOnline({ ...device, ...statusObj });
 
   const filteredDevices = (devices || []).filter((d) => {
     if (!searchQuery) return true;
@@ -148,30 +148,30 @@ export default function DashboardClient() {
     setNow(Date.now());
   };
 
-  const handleTogglePowerSaver = async () => { if (!device) return; try { await togglePowerSaver(device.id, !isPowerSaver); setDevice((p:any)=>({...p,is_power_saver:!isPowerSaver})); setRtState((p:any)=>p?{...p,is_power_saver:!isPowerSaver}:null); optimisticPing(); fetchDevices(); } catch { alert("Failed to toggle power saver"); } };
+  const handleTogglePowerSaver = async () => { if (!device) return; setActionLoading(true); try { await togglePowerSaver(device.id, !isPowerSaver); setDevice((p:any)=>({...p,is_power_saver:!isPowerSaver})); setRtState((p:any)=>p?{...p,is_power_saver:!isPowerSaver}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert("Failed to toggle power saver"); } finally { setActionLoading(false); } };
     const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); optimisticPing(); } catch { alert('Failed to execute GPS Locate'); } }, [device?.id]);
-  const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to execute Scream Alert'); } };
+  const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to execute Scream Alert'); } };
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
-  const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); optimisticPing(); fetchDevices(); } catch { alert('Invalid Password'); } finally { setActionLoading(false); } };
-  const handleStartSearch  = async () => { if (!device) return; try { await startSearchMode(device.id, 30); setDevice((p:any)=>({...p,is_searching:true})); setRtState((p:any)=>p?{...p,is_searching:true}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to execute BLE Radar'); } };
-  const handleStopSearch   = async () => { if (!device) return; try { await stopSearchMode(device.id); setDevice((p:any)=>({...p,is_searching:false})); setRtState((p:any)=>p?{...p,is_searching:false}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to stop BLE Radar'); } };
-  const handleStartStolen  = async () => { if (!device) return; try { await markStolen(device.id); setDevice((p:any)=>({...p,is_stolen:true})); setRtState((p:any)=>p?{...p,is_stolen:true}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to execute Lock Protocol'); } };
+  const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Invalid Password'); } finally { setActionLoading(false); } };
+  const handleStartSearch  = async () => { if (!device) return; try { await startSearchMode(device.id, 30); setDevice((p:any)=>({...p,is_searching:true})); setRtState((p:any)=>p?{...p,is_searching:true}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to execute BLE Radar'); } };
+  const handleStopSearch   = async () => { if (!device) return; try { await stopSearchMode(device.id); setDevice((p:any)=>({...p,is_searching:false})); setRtState((p:any)=>p?{...p,is_searching:false}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to stop BLE Radar'); } };
+  const handleStartStolen  = async () => { if (!device) return; try { await markStolen(device.id); setDevice((p:any)=>({...p,is_stolen:true})); setRtState((p:any)=>p?{...p,is_stolen:true}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to execute Lock Protocol'); } };
   const handleStopStolenClick = () => { if (!device) return; setShowPinModal(true); };
-  const handleMarkFound    = async () => { if (!device) return; setActionLoading(true); try { await markFound(device.id, pinInput.trim()); setShowPinModal(false); setPinInput(''); setDevice((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); setRtState((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); optimisticPing(); fetchDevices(); } catch { alert('Invalid 6-digit PIN'); } finally { setActionLoading(false); } };
+  const handleMarkFound    = async () => { if (!device) return; setActionLoading(true); try { await markFound(device.id, pinInput.trim()); setShowPinModal(false); setPinInput(''); setDevice((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); setRtState((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Invalid 6-digit PIN'); } finally { setActionLoading(false); } };
   const handleDeleteClick  = () => { if (!device) return; setShowDeleteModal(true); };
   const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
   const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
 
   const commands = [
-        { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device },
+        { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
     { label: 'Scream Alert',    sub: 'Force Siren',      icon: <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'blue',    onClick: handleStartScream,    disabled: !!isScreaming || !device },
     { label: 'Silence Alert',   sub: 'Mute Alarm',       icon: <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'slate',   onClick: handleStopScreamClick, disabled: !isScreaming || !device },
-    { label: 'GPS Locate',      sub: 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'emerald', onClick: handleLocate,         disabled: !device },
+    { label: 'GPS Locate',      sub: 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'emerald', onClick: handleLocate,         disabled: !device || actionLoading },
     { label: 'BLE Radar',       sub: 'Start Beacon',     icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'indigo',  onClick: handleStartSearch,    disabled: !!isSearching || !device },
     { label: 'Stop Radar',      sub: 'Disable Beacon',   icon: <Bluetooth className="w-5 h-5 sm:w-6 sm:h-6" />,        color: 'slate',   onClick: handleStopSearch,     disabled: !isSearching || !device },
     { label: 'Mark Stolen',     sub: 'Lock Protocol',    icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />,      color: 'rose',    onClick: handleStartStolen,    disabled: !!isStolen || !device },
     { label: 'Unmark Stolen',   sub: 'Recovered Status', icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />,      color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
-    { label: 'Wipe Device',     sub: 'Permanent Purge',  icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'slate',   onClick: handleDeleteClick,    disabled: !device },
+    { label: 'Wipe Device',     sub: 'Permanent Purge',  icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'slate',   onClick: handleDeleteClick,    disabled: !device || actionLoading },
   ];
   const btnColors: Record<string,string> = {
     blue:    'bg-blue-50 text-blue-600',
