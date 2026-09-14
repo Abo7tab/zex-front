@@ -65,6 +65,14 @@ export default function MeshLeafletMap({ logs }: { logs: any[] }) {
           </Popup>
         </Marker>
       ))}
+      {validPoints.length === 0 && (
+        <div className="absolute inset-0 z-[500] pointer-events-none flex items-center justify-center">
+          <div className="rounded-xl bg-slate-900/85 border border-slate-600 px-5 py-4 text-center shadow-xl">
+            <p className="text-sm font-bold text-white">No location points yet</p>
+            <p className="mt-1 text-xs text-slate-300">SMS/BLE events will appear here after coordinates are relayed.</p>
+          </div>
+        </div>
+      )}
     </MapContainer>
   );
 }
