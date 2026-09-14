@@ -14,15 +14,7 @@ function SeverityBadge({ s }: { s: string }) {
   return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${map[s] || map.info}`}>{labels[s] || s}</span>;
 }
 
-const MOCK_LOGS = [
-  { id: 1, timestamp: new Date(Date.now() - 300000).toISOString(), device_uid: 'zex-uid-350f22', type: 'SCREAM_ACTIVATED', severity: 'critical', operator: 'admin@c4isr.gov', payload: { action: 'scream', device_id: 1, duration_ms: 5000 } },
-  { id: 2, timestamp: new Date(Date.now() - 600000).toISOString(), device_uid: 'zex-uid-a1b2c3', type: 'DEVICE_LOCATED', severity: 'info', operator: 'admin@c4isr.gov', payload: { lat: 24.71, lng: 46.67, accuracy: 12 } },
-  { id: 3, timestamp: new Date(Date.now() - 900000).toISOString(), device_uid: 'zex-uid-350f22', type: 'STOLEN_REPORTED', severity: 'critical', operator: 'admin@c4isr.gov', payload: { reported_at: new Date().toISOString(), auto_scream: true } },
-  { id: 4, timestamp: new Date(Date.now() - 1200000).toISOString(), device_uid: 'zex-uid-a1b2c3', type: 'SEARCH_MODE_START', severity: 'warning', operator: 'system', payload: { interval_seconds: 30 } },
-  { id: 5, timestamp: new Date(Date.now() - 1800000).toISOString(), device_uid: 'zex-uid-350f22', type: 'DEVICE_LOGIN', severity: 'info', operator: 'system', payload: { ip: '192.168.1.1', user_agent: 'ZEX-Android/2.1' } },
-  { id: 6, timestamp: new Date(Date.now() - 86400000).toISOString(), device_uid: 'zex-uid-99f5e1', type: 'GEOFENCE_BREACH', severity: 'critical', operator: 'system', payload: { lat: 24.75, lng: 46.69, distance_m: 540, radius_m: 500 } },
-  { id: 7, timestamp: new Date(Date.now() - 90000000).toISOString(), device_uid: 'zex-uid-99f5e1', type: 'DATA_WIPE_INITIATED', severity: 'critical', operator: 'admin@c4isr.gov', payload: { target_device: 'zex-uid-99f5e1', auth_method: 'PASSWORD', auth_status: 'SUCCESS' } },
-];
+
 
 export default function LogsClient() {
   const router = useRouter();
@@ -46,10 +38,10 @@ export default function LogsClient() {
     api.get('/logs')
       .then(res => {
         if (res.data && res.data.length > 0) setLogs(res.data);
-        else setLogs(MOCK_LOGS);
+        else setLogs([]);
       })
       .catch(() => {
-        setLogs(MOCK_LOGS);
+        setLogs([]);
       })
       .finally(() => setLoading(false));
   }, []);

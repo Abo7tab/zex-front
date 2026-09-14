@@ -87,18 +87,25 @@ export default React.memo(function LeafletMap({
   history?: [number, number][]
 }) {
   if (typeof window === 'undefined') return null;
-
-  // Add deterministic jitter based on deviceId to avoid stacking markers exactly on top of each other
-  let jitterLat = 0;
-  let jitterLng = 0;
-  if (deviceId) {
-    const hash = deviceId.split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-    jitterLat = (hash % 100) * 0.000002;
-    jitterLng = ((hash >> 2) % 100) * 0.000002;
-  }
   
-  const displayLat = latitude + jitterLat;
-  const displayLng = longitude + jitterLng;
+  const isValidLocation = latitude && longitude && !(latitude === 0 && longitude === 0);
+  
+  if (!isValidLocation) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-100 rounded-lg">
+        <div className="text-slate-400 mb-2">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-slate-500">Waiting for precise location...</p>
+      </div>
+    );
+  }
+
+  const displayLat = latitude;
+  const displayLng = longitude;
 
   return (
     <MapContainer 
