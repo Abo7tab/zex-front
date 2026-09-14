@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import api from '@/lib/axios';
-import { ArrowLeft, MapPinned, Bluetooth, MessageSquare, MapPin, Clock, Activity, Trash2, ChevronDown } from 'lucide-react';
+import { ArrowLeft, MapPinned, Bluetooth, MessageSquare, MapPin, Clock, Activity, Trash2, ChevronDown, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const MeshLeafletMap = dynamic(() => import('./MeshLeafletMap'), {
@@ -21,11 +21,15 @@ export default function MeshMapClient() {
   const [visibleCount, setVisibleCount] = useState(20);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const logSignature = useRef('');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
   const fetchLogs = async () => {
+    setRefreshing(true);
     try {
       const res = await api.get('/logs');
+      setLastUpdated(new Date());
       const nextLogs = Array.isArray(res.data) ? res.data : [];
       const signature = nextLogs.map((log: any) => `${log.id}:${log.timestamp}:${log.action}`).join('|');
       if (signature !== logSignature.current) {
@@ -34,7 +38,7 @@ export default function MeshMapClient() {
       }
     } catch (err) {
       console.error('Failed to fetch offline events:', err);
-    }
+    } finally { setRefreshing(false); }
   };
 
   useEffect(() => {
@@ -75,6 +79,9 @@ export default function MeshMapClient() {
           <div className="flex items-center gap-3 text-xs text-slate-400">
             <span className="inline-flex items-center gap-2"><Activity className="w-4 h-4" /> {logs.length} events</span>
             <span className="inline-flex items-center gap-2 text-emerald-400"><MapPin className="w-4 h-4" /> {locationCount} locations</span>
+            <button onClick={fetchLogs} disabled={refreshing} title="Refresh offline events" className="inline-flex items-center gap-1 rounded-md border border-slate-700 px-2 py-1 hover:bg-slate-800 disabled:opacity-50">
+              <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
+            </button>
           </div>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-white mb-2">Fleet Offline & Mesh Map</h1>
@@ -98,6 +105,7 @@ export default function MeshMapClient() {
           <h2 className="text-sm font-bold text-white">Offline Event Details</h2>
           <div className="flex items-center gap-3">
             <span className="text-xs text-slate-400">{visibleLogs.length} of {filteredLogs.length} shown</span>
+            {lastUpdated && <span className="hidden sm:inline text-[10px] text-slate-500">Updated {lastUpdated.toLocaleTimeString('en-GB')}</span>}
             <button onClick={() => deleteLogs(selectedIds)} disabled={selectedIds.length === 0} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/10 border border-rose-400/30 px-2.5 py-1.5 text-[10px] font-bold text-rose-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-500/20">
               <Trash2 className="w-3 h-3" /> Delete selected ({selectedIds.length})
             </button>
@@ -114,9 +122,9 @@ export default function MeshMapClient() {
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                     {source.includes('BLE') ? <Bluetooth className="w-3.5 h-3.5 text-indigo-400" /> : source.includes('SMS') ? <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> : <Activity className="w-3.5 h-3.5 text-slate-400" />}
                     <span>{source}</span>
-                    <span className="text-slate-500">{log.device_name || 'Unknown device'}</span>
+                    <span className="text-slate-500">Target: {log.payload?.target_uid || 'Unknown device'}</span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400 truncate">{log.message || 'Activity logged'}</p>
+                  <p className="mt-1 text-xs text-slate-400 truncate">{log.message || 'Activity logged'} · Relay: {log.device_name || 'Unknown device'}</p>
                 </div>
                 <div className="flex items-center gap-4 text-[10px] font-mono shrink-0">
                   {hasLocation ? <a className="text-blue-400 hover:underline" href={`https://www.google.com/maps?q=${log.payload.lat},${log.payload.lng}`} target="_blank" rel="noreferrer">{log.payload.lat}, {log.payload.lng}</a> : <span className="text-amber-400">No coordinates</span>}
