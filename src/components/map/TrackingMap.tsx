@@ -73,8 +73,8 @@ export default function TrackingMap({
   if (typeof window === 'undefined') return null;
 
   // Find selected device coords to center map
-  let centerLat = 24.7136;
-  let centerLng = 46.6753;
+  let centerLat = 0;
+  let centerLng = 0;
 
   if (selectedDeviceId) {
     const rt = rtStates[selectedDeviceId];

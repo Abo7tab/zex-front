@@ -161,7 +161,7 @@ export default function LoginPage() {
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                   <span className="bg-slate-900/90 text-slate-200 border border-slate-700/80 px-3.5 py-1 rounded-full text-xs font-medium shadow backdrop-blur-sm" dir="ltr">
-                    24.7136° N, 46.6753° E
+                    0.0000� N, 0.0000� E
                   </span>
                 </div>
               </div>

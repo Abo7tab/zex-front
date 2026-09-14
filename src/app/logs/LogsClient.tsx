@@ -34,8 +34,8 @@ export default function LogsClient() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Try to fetch real logs, fallback to mock
-    api.get('/logs')
+    // Fetch real logs
+    const loadLogs = () => api.get('/logs')
       .then(res => {
         if (res.data && res.data.length > 0) setLogs(res.data);
         else setLogs([]);
@@ -44,6 +44,10 @@ export default function LogsClient() {
         setLogs([]);
       })
       .finally(() => setLoading(false));
+
+    loadLogs();
+    const refresh = setInterval(loadLogs, 10000);
+    return () => clearInterval(refresh);
   }, []);
 
   const handleCopy = () => {

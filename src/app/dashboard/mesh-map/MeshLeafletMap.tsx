@@ -26,7 +26,7 @@ function MapBoundsFitter({ bounds }: { bounds: L.LatLngBounds | null }) {
 export default function MeshLeafletMap({ logs }: { logs: any[] }) {
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
   
-  const validPoints = logs.filter(log => log.payload && log.payload.lat && log.payload.lng).map(log => {
+  const validPoints = logs.filter(log => log.payload && log.payload.lat != null && log.payload.lng != null).map(log => {
     return {
       lat: parseFloat(log.payload.lat),
       lng: parseFloat(log.payload.lng),

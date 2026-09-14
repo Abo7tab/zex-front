@@ -14,6 +14,7 @@ import { Shield, Zap, User, Smartphone, Search, AlertTriangle, ShieldCheck,
 import dynamic from 'next/dynamic';
 import SettingsModal from '@/components/modals/SettingsModal';
 import { useRouter } from 'next/navigation';
+import api from '@/lib/axios';
 
 const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
   ssr: false,
@@ -60,10 +61,28 @@ export default function DashboardClient() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [serverActivity, setServerActivity] = useState<any[]>([]);
 
   const allLogs = useTerminalStore((state) => state.logs);
-  const logs = allLogs.slice(-50);
+  const activityLines = serverActivity.map((entry) =>
+    `[SERVER] ${entry.action || 'activity'} • ${entry.device_name || 'device'}: ${entry.message || 'Activity logged'}`
+  );
+  const logs = [...allLogs, ...activityLines].slice(-50);
   const router = useRouter();
+
+  useEffect(() => {
+    const loadServerActivity = async () => {
+      try {
+        const response = await api.get('/logs');
+        setServerActivity(Array.isArray(response.data) ? response.data.slice(0, 20) : []);
+      } catch {
+        // The main dashboard remains usable when the activity endpoint is unavailable.
+      }
+    };
+    loadServerActivity();
+    const refresh = setInterval(loadServerActivity, 10000);
+    return () => clearInterval(refresh);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('zex_token') || localStorage.getItem('zex_auth_token');
@@ -352,7 +371,7 @@ export default function DashboardClient() {
                   </div>
                   <div className="flex flex-col gap-0.5">
                     <span className="font-bold text-sm">{isStolen ? '⚠ سرقة: Protocol الطوارئ Active' : 'TACTICAL STATUS: SYSTEM ONLINE'}</span>
-                    <span className={`text-[11px] ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>{isStolen ? 'التتبع السري Active — AES-256 E2EE' : 'All systems operating within standard parameters. — DEFCON-5'}</span>
+                    <span className={`text-[11px] ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>{isStolen ? 'التتبع السري Active — AES-256 E2EE' : 'All systems operating within standard parameters. — Normal Operations'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 font-mono text-[10px] sm:text-xs self-end sm:self-center">
@@ -420,7 +439,7 @@ export default function DashboardClient() {
 
                   <div className="absolute bottom-2.5 left-2.5 z-20 pointer-events-none">
                     <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-1 rounded-lg font-bold text-[9px] sm:text-[10px] flex items-center gap-1">
-                      <ShieldCheck className="w-2.5 h-2.5" />Safe Geofence
+                      <ShieldCheck className="w-2.5 h-2.5" />Geofence
                     </div>
                   </div>
                 </div>

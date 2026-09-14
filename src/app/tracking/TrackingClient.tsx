@@ -65,8 +65,8 @@ export default function TrackingClient() {
           setRtStates(prev => ({ ...prev, [uid]: data }));
           
           // Update history
-          const lat = Number(data?.last_location?.latitude || data?.location?.latitude || d?.last_location?.latitude || 24.7136);
-          const lng = Number(data?.last_location?.longitude || data?.location?.longitude || d?.last_location?.longitude || 46.6753);
+          const lat = Number(data?.last_location?.latitude || data?.location?.latitude || d?.last_location?.latitude || 0);
+          const lng = Number(data?.last_location?.longitude || data?.location?.longitude || d?.last_location?.longitude || 0);
           
           setHistoryMap(prev => {
             const hist = prev[uid] || [];
@@ -151,7 +151,7 @@ export default function TrackingClient() {
               {Object.keys(rtStates).filter(k => {
                 const t = new Date(rtStates[k]?.status?.last_heartbeat_at || 0).getTime();
                 return (Date.now() - t) < 120000;
-              }).length} Protocol: Active
+              }).length} Connection Active
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ export default function TrackingClient() {
               <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-sm flex flex-col items-center justify-center gap-1">
                 <Wifi className={`w-4 h-4 ${isOnline ? 'text-emerald-500' : 'text-slate-400'}`} />
                 <span className="text-[10px] text-slate-500 font-bold mt-1">الاتصال</span>
-                <span className={`text-xs font-bold ${isOnline ? 'text-emerald-600' : 'text-slate-500'}`}>{isOnline ? 'Protocol: Active' : 'Offline'}</span>
+                <span className={`text-xs font-bold ${isOnline ? 'text-emerald-600' : 'text-slate-500'}`}>{isOnline ? 'Connection Active' : 'Offline'}</span>
               </div>
             </div>
 

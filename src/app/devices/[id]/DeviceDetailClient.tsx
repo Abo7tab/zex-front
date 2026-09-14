@@ -154,11 +154,11 @@ export default function DeviceDetailClient({ id }: { id: string }) {
     { id: 'scream', label: 'Force Loud Siren', icon: ShieldAlert, color: 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 hover:border-rose-300' },
     { id: 'stop_scream', label: 'Mute Alarm', icon: VolumeX, color: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300' },
     { id: 'get_location', label: 'Fetch Coordinates', icon: MapPin, color: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
-    { id: 'start_search', label: 'Local Beacon Mode', icon: Radio, color: 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300' },
+    { id: 'start_search', label: 'Tracking Relay (SMS)', icon: Radio, color: 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300' },
     { id: 'stop_search', label: 'Disable Beacon', icon: Signal, color: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300' },
     { id: 'mark_stolen', label: 'Lock Protocol', icon: Lock, color: 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
     { id: 'unmark_stolen', label: 'Recovered Status', icon: Unlock, color: 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
-    { id: 'wipe', label: 'Permanent Purge', icon: Trash2, color: 'bg-red-600 text-white border-red-700 hover:bg-red-700' },
+    { id: 'wipe', label: 'Remove From Account', icon: Trash2, color: 'bg-red-600 text-white border-red-700 hover:bg-red-700' },
   ];
 
   return (
@@ -225,7 +225,7 @@ export default function DeviceDetailClient({ id }: { id: string }) {
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[10px] font-bold text-slate-400 mb-1">LOCAL BEACON (BLE)</span>
+                  <span className="block text-[10px] font-bold text-slate-400 mb-1">TRACKING RELAY</span>
                   <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg border ${device.search_mode ? 'text-indigo-600 bg-indigo-50 border-indigo-100' : 'text-slate-500 bg-slate-50 border-slate-200'}`}>
                     <Radio className="w-3 h-3" /> {device.search_mode ? 'Active Broadcasting' : 'Disabled'}
                   </span>
