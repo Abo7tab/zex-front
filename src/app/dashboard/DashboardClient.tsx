@@ -162,17 +162,14 @@ export default function DashboardClient() {
   const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
   const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
 
-  const commands = [
-        { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
-    { label: 'Scream Alert',    sub: 'Force Siren',      icon: <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'blue',    onClick: handleStartScream,    disabled: !!isScreaming || !device },
-    { label: 'Silence Alert',   sub: 'Mute Alarm',       icon: <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'slate',   onClick: handleStopScreamClick, disabled: !isScreaming || !device },
-    { label: 'GPS Locate',      sub: 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'emerald', onClick: handleLocate,         disabled: !device || actionLoading },
-    { label: 'BLE Radar',       sub: 'Start Beacon',     icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'indigo',  onClick: handleStartSearch,    disabled: !!isSearching || !device },
-    { label: 'Stop Radar',      sub: 'Disable Beacon',   icon: <Bluetooth className="w-5 h-5 sm:w-6 sm:h-6" />,        color: 'slate',   onClick: handleStopSearch,     disabled: !isSearching || !device },
-    { label: 'Mark Stolen',     sub: 'Lock Protocol',    icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />,      color: 'rose',    onClick: handleStartStolen,    disabled: !!isStolen || !device },
-    { label: 'Unmark Stolen',   sub: 'Recovered Status', icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />,      color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
-    { label: 'Wipe Device',     sub: 'Permanent Purge',  icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'slate',   onClick: handleDeleteClick,    disabled: !device || actionLoading },
-  ];
+    const commands = [
+      { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
+      { label: 'Scream Alert',          sub: isScreaming ? 'Mute Siren' : 'Force Siren',      icon: isScreaming ? <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" /> : <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: isScreaming ? 'slate' : 'blue', onClick: isScreaming ? handleStopScreamClick : handleStartScream, disabled: !device },
+      { label: 'GPS Locate',            sub: 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleLocate, disabled: !device || actionLoading },
+      { label: 'Mark Stolen',           sub: 'Lock Protocol',    icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'rose', onClick: handleStartStolen, disabled: !!isStolen || !device },
+      { label: 'Unmark Stolen',         sub: 'Recovered Status', icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
+      { label: 'Remove Device',         sub: 'Delete Record',    icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'slate', onClick: handleDeleteClick, disabled: !device || actionLoading },
+    ];
   const btnColors: Record<string,string> = {
     blue:    'bg-blue-50 text-blue-600',
     slate:   'bg-slate-100 text-slate-600',
@@ -496,8 +493,8 @@ export default function DashboardClient() {
           <div className="bg-white p-5 sm:p-6 rounded-t-3xl sm:rounded-3xl w-full sm:max-w-sm shadow-2xl text-center" dir="ltr">
             <div className="w-3 h-1 rounded-full bg-slate-300 mx-auto mb-4 sm:hidden" />
             <div className="w-14 h-14 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3"><Trash2 className="w-7 h-7" /></div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Confirm الPurge</h3>
-            <p className="text-slate-500 text-xs mb-5">سيتم Wipe جميع بيانات الجهاز نهائياً.</p>
+            <h3 className="text-lg font-bold text-slate-800 mb-1.5">Remove Device</h3>
+            <p className="text-slate-500 text-xs mb-5">This action will remove the device from your tracking dashboard. It does NOT wipe the device data or factory reset it.</p>
             <div className="relative mb-5">
               <input type={showPassword ? 'text' : 'password'} value={deletePasswordInput} onChange={e => setDeletePasswordInput(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-red-500 focus:outline-none pl-10 font-mono text-left" dir="ltr" placeholder="••••••••••••" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">{showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
