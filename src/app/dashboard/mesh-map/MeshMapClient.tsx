@@ -114,6 +114,7 @@ export default function MeshMapClient() {
                 </div>
                 <div className="flex items-center gap-4 text-[10px] font-mono shrink-0">
                   {hasLocation ? <a className="text-blue-400 hover:underline" href={`https://www.google.com/maps?q=${log.payload.lat},${log.payload.lng}`} target="_blank" rel="noreferrer">{log.payload.lat}, {log.payload.lng}</a> : <span className="text-amber-400">No coordinates</span>}
+                  {log.payload?.distance_meters != null && <span className="text-cyan-300">{Number(log.payload.distance_meters).toFixed(1)}m · {log.payload.proximity || 'SEARCHING'}</span>}
                   <span className="text-slate-500 inline-flex items-center gap-1"><Clock className="w-3 h-3" />{log.timestamp ? new Date(log.timestamp).toLocaleString('en-GB') : '--'}</span>
                 </div>
               </div>

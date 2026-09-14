@@ -226,11 +226,12 @@ export default function LogsClient() {
                             <span key={key}><b>{key.replace('_at', '')}:</b> {new Date(log.metadata[key]).toLocaleTimeString('en-GB')}</span>
                           ))}
                         </div>
-                        {log.payload?.lat != null && log.payload?.lng != null && (
+                          {log.payload?.lat != null && log.payload?.lng != null && (
                           <a href={`https://www.google.com/maps?q=${log.payload.lat},${log.payload.lng}`} target="_blank" rel="noreferrer" className="mt-1 inline-block text-blue-600 underline font-mono">
                             GPS {log.payload.lat}, {log.payload.lng}
                           </a>
-                        )}
+                          )}
+                          {log.payload?.distance_meters != null && <span className="ml-3 text-cyan-600 font-mono">Range {Number(log.payload.distance_meters).toFixed(1)}m · {log.payload.proximity || 'SEARCHING'}</span>}
                       </td>
                       <td className="px-4 py-3">
                         <button 

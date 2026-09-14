@@ -510,6 +510,7 @@ export default function DashboardClient() {
                           </div>
                           <p className="text-[11px] text-slate-600 truncate">{entry.message || 'Offline event received'}</p>
                           {payload.lat && payload.lng && <p className="font-mono text-[10px] text-blue-600">{payload.lat}, {payload.lng}</p>}
+                          {payload.distance_meters && <p className="font-mono text-[10px] text-cyan-600">Range {Number(payload.distance_meters).toFixed(1)}m · {payload.proximity || 'SEARCHING'}</p>}
                           {entry.metadata && <p className="font-mono text-[9px] text-slate-400">{Object.entries(entry.metadata).filter(([key]) => key.endsWith('_at')).map(([key, value]) => `${key.replace('_at', '')}: ${new Date(String(value)).toLocaleTimeString('en-GB')}`).join(' • ')}</p>}
                         </div>
                         <span className="shrink-0 text-[9px] text-slate-400">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('en-GB') : '--'}</span>
