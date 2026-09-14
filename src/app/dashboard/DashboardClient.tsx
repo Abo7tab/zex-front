@@ -246,7 +246,6 @@ export default function DashboardClient() {
                       {getTacticalName(d)}
                     </span>
                   </div>
-                  <span className="text-[9px] text-slate-400 font-mono truncate pr-5">{d?.device_uid || ''}</span>
                 </div>
                 {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
               </div>
