@@ -51,7 +51,7 @@ export default function SettingsClient() {
       alert('Operator profile updated successfully.');
     } catch (error) {
       console.error(error);
-      alert('Failed to update profile. Endpoint might not exist.');
+      alert(error.response?.data?.message || 'Failed to update profile. Ensure backend is deployed.');
     } finally {
       setLoading(false);
     }
@@ -322,3 +322,4 @@ export default function SettingsClient() {
     </div>
   );
 }
+
