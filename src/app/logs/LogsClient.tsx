@@ -59,9 +59,9 @@ export default function LogsClient() {
     if (search) {
       const q = search.toLowerCase();
       return (
-        String(log.device_uid).toLowerCase().includes(q) ||
-        String(log.type).toLowerCase().includes(q) ||
-        String(log.operator).toLowerCase().includes(q)
+        String(log.device_name).toLowerCase().includes(q) ||
+        String(log.action).toLowerCase().includes(q) ||
+        String(log.message).toLowerCase().includes(q)
       );
     }
     return true;
@@ -82,7 +82,7 @@ export default function LogsClient() {
           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md shrink-0">
             <Shield className="w-4 h-4" />
           </div>
-          <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight hidden sm:block">ZEX SECURITY — FORENSIC AUDIT LOG</span>
+          <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight hidden sm:block">ZEX SECURITY - OFFLINE FLEET ACTIVITIES</span>
           <span className="font-extrabold text-sm text-slate-900 tracking-tight leading-tight sm:hidden">Audit Log</span>
         </div>
         <button onClick={() => router.push('/dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors text-xs font-bold bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
@@ -162,16 +162,16 @@ export default function LogsClient() {
                         {new Date(log.timestamp).toLocaleString('en-GB')}
                       </td>
                       <td className="px-4 py-3 font-bold text-slate-800 text-xs font-mono">
-                        {log.device_uid}
+                        {log.device_name}
                       </td>
                       <td className="px-4 py-3">
                         <SeverityBadge s={log.severity} />
                       </td>
                       <td className="px-4 py-3 font-mono text-xs font-bold text-slate-700">
-                        {log.type}
+                        {log.action}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-500">
-                        {log.operator}
+                        {log.message && log.message.includes('https://maps.google.com/') ? (<span>{log.message.split('https://maps.google.com/')[0]} <a href={`https://maps.google.com/${log.message.split('https://maps.google.com/')[1]}`} target='_blank' className='text-blue-500 underline'>[View on Map]</a></span>) : log.message}
                       </td>
                       <td className="px-4 py-3">
                         <button 
