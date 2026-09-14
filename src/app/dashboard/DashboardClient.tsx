@@ -62,6 +62,8 @@ export default function DashboardClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [serverActivity, setServerActivity] = useState<any[]>([]);
+  const [activityVisibleCount, setActivityVisibleCount] = useState(5);
+  const [selectedActivityIds, setSelectedActivityIds] = useState<number[]>([]);
 
   const allLogs = useTerminalStore((state) => state.logs);
   const activityLines = serverActivity.map((entry) =>
@@ -69,6 +71,23 @@ export default function DashboardClient() {
   );
   const logs = [...allLogs, ...activityLines].slice(-50);
   const router = useRouter();
+
+  const offlineActivities = useMemo(() => serverActivity.filter((entry: any) => {
+    const payload = entry?.payload || {};
+    const target = String(payload.target_uid || '');
+    return !device?.device_uid || target === device.device_uid || target.endsWith(String(device.device_uid).slice(-8));
+  }), [serverActivity, device?.device_uid]);
+
+  const deleteActivityLogs = async (ids: number[]) => {
+    if (!ids.length || !window.confirm(`Delete ${ids.length} activity record(s)?`)) return;
+    try {
+      await Promise.all(ids.map(id => api.delete(`/logs/${id}`)));
+      setServerActivity(current => current.filter(entry => !ids.includes(Number(entry.id))));
+      setSelectedActivityIds(current => current.filter(id => !ids.includes(id)));
+    } catch {
+      alert('Failed to delete activity records');
+    }
+  };
 
   useEffect(() => {
     const loadServerActivity = async () => {
@@ -472,18 +491,18 @@ export default function DashboardClient() {
                       <p className="text-[10px] text-slate-500">SMS and BLE discoveries for the selected target</p>
                     </div>
                   </div>
-                  <button onClick={() => router.push('/logs')} className="text-[10px] font-bold text-blue-600 hover:text-blue-800">View all</button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => deleteActivityLogs(selectedActivityIds)} disabled={selectedActivityIds.length === 0} className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-100"><Trash2 className="w-3 h-3" /> Delete ({selectedActivityIds.length})</button>
+                    <button onClick={() => router.push('/logs')} className="text-[10px] font-bold text-blue-600 hover:text-blue-800">View all</button>
+                  </div>
                 </div>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {serverActivity.filter((entry: any) => {
-                    const payload = entry?.payload || {};
-                    const target = String(payload.target_uid || '');
-                    return !device?.device_uid || target === device.device_uid || target.endsWith(String(device.device_uid).slice(-8));
-                  }).slice(0, 5).map((entry: any, index: number) => {
+                  {offlineActivities.slice(0, activityVisibleCount).map((entry: any, index: number) => {
                     const payload = entry?.payload || {};
                     const source = String(payload.source || entry.action || 'activity');
                     return (
-                      <div key={`${entry.id || 'event'}-${index}`} className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                      <div key={`${entry.id || 'event'}-${index}`} className="flex items-start gap-2 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                        <input type="checkbox" aria-label={`Select activity ${entry.id || index}`} checked={selectedActivityIds.includes(Number(entry.id))} onChange={() => setSelectedActivityIds(current => current.includes(Number(entry.id)) ? current.filter(id => id !== Number(entry.id)) : [...current, Number(entry.id)])} className="mt-1 accent-blue-600" />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
                             <span className={`h-1.5 w-1.5 rounded-full ${source.includes('BLE') ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
@@ -491,12 +510,14 @@ export default function DashboardClient() {
                           </div>
                           <p className="text-[11px] text-slate-600 truncate">{entry.message || 'Offline event received'}</p>
                           {payload.lat && payload.lng && <p className="font-mono text-[10px] text-blue-600">{payload.lat}, {payload.lng}</p>}
+                          {entry.metadata && <p className="font-mono text-[9px] text-slate-400">{Object.entries(entry.metadata).filter(([key]) => key.endsWith('_at')).map(([key, value]) => `${key.replace('_at', '')}: ${new Date(String(value)).toLocaleTimeString('en-GB')}`).join(' • ')}</p>}
                         </div>
                         <span className="shrink-0 text-[9px] text-slate-400">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('en-GB') : '--'}</span>
                       </div>
                     );
                   })}
-                  {serverActivity.length === 0 && <p className="py-5 text-center text-xs text-slate-400">Waiting for SMS or BLE discovery events...</p>}
+                  {offlineActivities.length === 0 && <p className="py-5 text-center text-xs text-slate-400">Waiting for SMS or BLE discovery events...</p>}
+                  {activityVisibleCount < offlineActivities.length && <button onClick={() => setActivityVisibleCount(current => current + 5)} className="w-full rounded-lg border border-slate-200 py-2 text-[10px] font-bold text-blue-600 hover:bg-blue-50">Show more activity</button>}
                 </div>
               </div>
 
