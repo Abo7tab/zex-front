@@ -10,3 +10,4 @@ export const stopSearchMode = (id: number | string) => api.post(`/devices/${id}/
 export const markStolen = (id: number | string) => api.post(`/devices/${id}/stolen`).then(res => res.data);
 export const markFound = (id: number | string, pin_code: string) => api.post(`/devices/${id}/found`, { pin_code }).then(res => res.data);
 export const deleteDevice = (id: number | string, password?: string) => api.delete(`/devices/${id}`, { data: { password } }).then(res => res.data);
+export const togglePowerSaver = (id: number | string, is_power_saver: boolean) => api.post(`/devices/${id}/power-saver`, { is_power_saver }).then(res => res.data);

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getMe, logout } from '@/lib/auth';
-import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice } from '@/lib/api/devices';
+import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice, togglePowerSaver } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
 import { useTerminalStore } from '@/store/useTerminalStore';
 import {
@@ -41,7 +41,7 @@ export default function DashboardClient() {
     if (!lastSeen) return false;
     const t = new Date(lastSeen).getTime();
     if (isNaN(t) || t <= 0) return false;
-    return (now - t) < 120000;
+    return (now - t) < 300000;
   }
   const [device, setDevice] = useState<any>(null);
   const [devices, setDevices] = useState<any[]>([]);
@@ -117,6 +117,7 @@ export default function DashboardClient() {
   const isScreaming  = statusObj.is_screaming  ?? device?.is_screaming;
   const isStolen     = statusObj.is_stolen     ?? device?.is_stolen;
   const isSearching  = statusObj.is_searching  ?? device?.is_searching;
+    const isPowerSaver = statusObj.is_power_saver ?? device?.is_power_saver;
   const batteryLevel = Number(statusObj.battery_level ?? device?.battery_level ?? 0);
 
   const isOnline = isDeviceOnline(statusObj || device);
@@ -148,7 +149,8 @@ export default function DashboardClient() {
     setNow(Date.now());
   };
 
-  const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); optimisticPing(); } catch { alert('Failed to execute GPS Locate'); } }, [device?.id]);
+  const handleTogglePowerSaver = async () => { if (!device) return; try { await togglePowerSaver(device.id, !isPowerSaver); setDevice((p:any)=>({...p,is_power_saver:!isPowerSaver})); setRtState((p:any)=>p?{...p,is_power_saver:!isPowerSaver}:null); optimisticPing(); fetchDevices(); } catch { alert("Failed to toggle power saver"); } };
+    const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); optimisticPing(); } catch { alert('Failed to execute GPS Locate'); } }, [device?.id]);
   const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); optimisticPing(); fetchDevices(); } catch { alert('Failed to execute Scream Alert'); } };
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
   const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); optimisticPing(); fetchDevices(); } catch { alert('Invalid Password'); } finally { setActionLoading(false); } };
@@ -174,7 +176,8 @@ export default function DashboardClient() {
   const btnColors: Record<string,string> = {
     blue:    'bg-blue-50 text-blue-600',
     slate:   'bg-slate-100 text-slate-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
+    amber: 'bg-amber-50 text-amber-600',
+      emerald: 'bg-emerald-50 text-emerald-600',
     indigo:  'bg-indigo-50 text-indigo-600',
     rose:    'bg-rose-50 text-rose-600',
   };
