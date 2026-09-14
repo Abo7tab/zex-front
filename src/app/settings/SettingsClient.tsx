@@ -57,19 +57,46 @@ export default function SettingsClient() {
     }
   };
 
-  const handleUpdateSecurity = async (e: React.FormEvent) => {
+  
+  const [showPinPassword, setShowPinPassword] = useState(false);
+  
+  const [pinCurrentPassword, setPinCurrentPassword] = useState('');
+  const [showPinCurrentPassword, setShowPinCurrentPassword] = useState(false);
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Simulate API Call if no endpoint exists
-      await api.put('/auth/security', { currentPassword, newPassword, pinCode });
-      alert('Security credentials updated successfully.');
+      await api.put('/auth/security', { 
+        current_password: currentPassword, 
+        password: newPassword,
+        password_confirmation: newPassword
+      });
+      alert('Password updated successfully.');
       setCurrentPassword('');
       setNewPassword('');
-      setPinCode('');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Failed to update security credentials. Endpoint might not exist.');
+      alert(error.response?.data?.message || 'Failed to update password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.put('/auth/security', { 
+        current_password: pinCurrentPassword, 
+        pin_code: pinCode 
+      });
+      alert('PIN updated successfully.');
+      setPinCurrentPassword('');
+      setPinCode('');
+    } catch (error: any) {
+      console.error(error);
+      alert(error.response?.data?.message || 'Failed to update PIN.');
     } finally {
       setLoading(false);
     }
@@ -151,21 +178,22 @@ export default function SettingsClient() {
             </form>
           </section>
           
-          {/* Security Settings */}
+          
+          {/* Security (Password) */}
           <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
                 <Lock className="w-4 h-4" />
               </div>
-              <h2 className="text-lg font-bold text-slate-800">Security & PIN</h2>
+              <h2 className="text-lg font-bold text-slate-800">Change Password</h2>
             </div>
             
-            <form onSubmit={handleUpdateSecurity} className="space-y-4">
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-700">Current Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-                  <input type={showCurrentPassword ? "text" : "password"} value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full h-11 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white font-mono tracking-wider transition-colors" placeholder="••••••••" />
+                  <input type={showCurrentPassword ? "text" : "password"} required value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="w-full h-11 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white font-mono tracking-wider transition-colors" placeholder="••••••••" />
                   <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1">
                     {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -176,28 +204,59 @@ export default function SettingsClient() {
                 <label className="text-xs font-bold text-slate-700">New Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-                  <input type={showNewPassword ? "text" : "password"} value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full h-11 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white font-mono tracking-wider transition-colors" placeholder="••••••••" />
+                  <input type={showNewPassword ? "text" : "password"} required minLength={8} value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full h-11 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white font-mono tracking-wider transition-colors" placeholder="••••••••" />
                   <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1">
                     {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
               
+              <button type="submit" disabled={loading} className="w-full mt-2 h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 transition-all active:scale-[0.99] disabled:opacity-75">
+                Update Password
+              </button>
+            </form>
+          </section>
+
+          {/* Authorization PIN */}
+          <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <KeyRound className="w-4 h-4" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-800">Authorization PIN</h2>
+            </div>
+            
+            <form onSubmit={handleUpdatePin} className="space-y-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-slate-700">Authorization PIN (6 digits)</label>
+                <label className="text-xs font-bold text-slate-700">Current Password (to verify)</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
+                  <input type={showPinCurrentPassword ? "text" : "password"} required value={pinCurrentPassword} onChange={e => setPinCurrentPassword(e.target.value)} className="w-full h-11 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:bg-white font-mono tracking-wider transition-colors" placeholder="••••••••" />
+                  <button type="button" onClick={() => setShowPinCurrentPassword(!showPinCurrentPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1">
+                    {showPinCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-700">New Authorization PIN (6 digits)</label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
-                  <input type="password" maxLength={6} pattern="[0-9]{6}" value={pinCode} onChange={e => setPinCode(e.target.value.replace(/\D/g, ''))} className="w-full h-11 pl-10 pr-4 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-emerald-600 focus:bg-white font-mono tracking-widest transition-colors" placeholder="000000" />
+                  <input type={showPinPassword ? "text" : "password"} required maxLength={6} pattern="[0-9]{6}" value={pinCode} onChange={e => setPinCode(e.target.value.replace(/\D/g, ''))} className="w-full h-11 pl-10 pr-10 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:bg-white font-mono tracking-widest transition-colors" placeholder="000000" />
+                  <button type="button" onClick={() => setShowPinPassword(!showPinPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1">
+                    {showPinPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
               
-              <button type="submit" disabled={loading} className="w-full mt-2 h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 transition-all active:scale-[0.99] disabled:opacity-75">
-                Update Security Credentials
+              <button type="submit" disabled={loading} className="w-full mt-2 h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-600/20 transition-all active:scale-[0.99] disabled:opacity-75">
+                Update PIN
               </button>
             </form>
           </section>
 
           {/* Session & Tokens */}
+
           <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:col-span-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               

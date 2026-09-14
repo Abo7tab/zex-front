@@ -320,7 +320,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">الهاتف</label>
+                    <label className="text-xs font-bold text-slate-700">Phone Number</label>
                     <div className="relative flex items-center">
                       <Phone className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
                       <input type="tel" dir="ltr" required value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full h-10 pl-9 pr-3 text-left rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm" placeholder="+966" />
@@ -337,7 +337,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">رمز الأمان (PIN)</label>
+                    <label className="text-xs font-bold text-slate-700">Security PIN (6 Digits)</label>
                     <div className="relative flex items-center">
                       <KeyRound className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
                       <input type="password" required maxLength={6} pattern="[0-9]{6}" value={pinCode} onChange={(e) => setPinCode(e.target.value)} className="w-full h-10 pl-9 pr-3 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="6 digits" />
@@ -357,7 +357,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-bold text-slate-700">Confirm المرور</label>
+                    <label className="text-xs font-bold text-slate-700">Confirm Password</label>
                     <div className="relative flex items-center">
                       <Lock className="absolute right-3 text-slate-400 w-4 h-4 pointer-events-none" />
                       <input type={showPassword ? "text" : "password"} required value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} className="w-full h-10 pl-9 pr-9 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:bg-white shadow-sm font-mono tracking-widest text-left" dir="ltr" placeholder="••••••" />
