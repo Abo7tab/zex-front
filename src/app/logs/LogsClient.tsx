@@ -24,6 +24,7 @@ export default function LogsClient() {
   // Filters
   const [search, setSearch] = useState('');
   const [filterSeverity, setFilterSeverity] = useState('all');
+  const [filterActivity, setFilterActivity] = useState('all');
   
   // Pagination
   const [page, setPage] = useState(1);
@@ -58,8 +59,18 @@ export default function LogsClient() {
     }
   };
 
+  const activityKind = (log: any) => {
+    const source = String(log?.payload?.source || '').toUpperCase();
+    const action = String(log?.action || '').toUpperCase();
+    if (source.includes('BLE') || action.includes('BLE')) return 'BLE';
+    if (source.includes('SMS') || action.includes('SMS')) return 'SMS';
+    if (action.includes('COMMAND') || action.includes('SCREAM') || action.includes('LOCATE') || action.includes('STOLEN') || action.includes('FOUND') || action.includes('LOCK')) return 'COMMAND';
+    return 'SYSTEM';
+  };
+
   const filteredLogs = logs.filter(log => {
     if (filterSeverity !== 'all' && log.severity !== filterSeverity) return false;
+    if (filterActivity !== 'all' && activityKind(log) !== filterActivity) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -142,6 +153,17 @@ export default function LogsClient() {
               </button>
             ))}
           </div>
+          <div className="flex bg-indigo-50 p-1 rounded-xl w-full md:w-auto overflow-x-auto shrink-0">
+            {[['all', 'All Activity'], ['COMMAND', 'Commands'], ['SMS', 'SMS'], ['BLE', 'BLE'], ['SYSTEM', 'System']].map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => { setFilterActivity(id); setPage(1); }}
+                className={`flex-1 md:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap ${filterActivity === id ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-500 hover:text-indigo-700'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Table */}
@@ -154,7 +176,7 @@ export default function LogsClient() {
                   <th className="px-4 py-3">Node / Device</th>
                   <th className="px-4 py-3">Severity</th>
                   <th className="px-4 py-3">Operation Type</th>
-                  <th className="px-4 py-3">Operator</th>
+                  <th className="px-4 py-3">Timeline / Details</th>
                   <th className="px-4 py-3 w-16">Details</th>
                 </tr>
               </thead>
@@ -172,10 +194,21 @@ export default function LogsClient() {
                         <SeverityBadge s={log.severity} />
                       </td>
                       <td className="px-4 py-3 font-mono text-xs font-bold text-slate-700">
-                        {log.action}
+                        <div>{log.action}</div>
+                        {log.metadata?.command_id && <div className="mt-1 text-[10px] text-indigo-500">CMD #{log.metadata.command_id} · {log.metadata.command_type || log.metadata.status || ''}</div>}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-500">
-                        {log.message && log.message.includes('https://maps.google.com/') ? (<span>{log.message.split('https://maps.google.com/')[0]} <a href={`https://maps.google.com/${log.message.split('https://maps.google.com/')[1]}`} target='_blank' className='text-blue-500 underline'>[View on Map]</a></span>) : log.message}
+                      <td className="px-4 py-3 text-xs text-slate-500 min-w-[260px]">
+                        <div className="font-semibold text-slate-700">{log.message || 'Activity logged'}</div>
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] text-slate-400">
+                          {(['queued_at', 'sent_at', 'received_at', 'executed_at'] as const).map(key => log.metadata?.[key] && (
+                            <span key={key}><b>{key.replace('_at', '')}:</b> {new Date(log.metadata[key]).toLocaleTimeString('en-GB')}</span>
+                          ))}
+                        </div>
+                        {log.payload?.lat != null && log.payload?.lng != null && (
+                          <a href={`https://www.google.com/maps?q=${log.payload.lat},${log.payload.lng}`} target="_blank" rel="noreferrer" className="mt-1 inline-block text-blue-600 underline font-mono">
+                            GPS {log.payload.lat}, {log.payload.lng}
+                          </a>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <button 
