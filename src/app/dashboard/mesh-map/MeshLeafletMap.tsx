@@ -26,7 +26,11 @@ function MapBoundsFitter({ bounds }: { bounds: L.LatLngBounds | null }) {
 export default function MeshLeafletMap({ logs }: { logs: any[] }) {
   const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
   
-  const validPoints = logs.filter(log => log.payload && log.payload.lat != null && log.payload.lng != null).map(log => {
+  const validPoints = logs.filter(log => {
+    const lat = Number(log?.payload?.lat);
+    const lng = Number(log?.payload?.lng);
+    return log.payload && Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+  }).map(log => {
     return {
       lat: parseFloat(log.payload.lat),
       lng: parseFloat(log.payload.lng),
@@ -37,12 +41,14 @@ export default function MeshLeafletMap({ logs }: { logs: any[] }) {
     }
   }).filter(p => !isNaN(p.lat) && !isNaN(p.lng));
 
+  const pointSignature = validPoints.map(point => `${point.targetUid}:${point.lat}:${point.lng}`).join('|');
+
   useEffect(() => {
-    if (validPoints.length > 0) {
+    if (validPoints.length > 0 && !bounds) {
       const b = L.latLngBounds(validPoints.map(p => [p.lat, p.lng]));
       setBounds(b);
     }
-  }, [logs]);
+  }, [pointSignature, validPoints, bounds]);
 
   return (
     <MapContainer center={[30.0, 31.0]} zoom={4} className="w-full h-full" style={{ background: '#1e293b' }}>

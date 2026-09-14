@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import api from '@/lib/axios';
 import { ArrowLeft, MapPinned, Bluetooth, MessageSquare, MapPin, Clock, Activity, Trash2, ChevronDown } from 'lucide-react';
@@ -20,12 +20,18 @@ export default function MeshMapClient() {
   const [filter, setFilter] = useState('all');
   const [visibleCount, setVisibleCount] = useState(20);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const logSignature = useRef('');
   const router = useRouter();
 
   const fetchLogs = async () => {
     try {
       const res = await api.get('/logs');
-      setLogs(res.data);
+      const nextLogs = Array.isArray(res.data) ? res.data : [];
+      const signature = nextLogs.map((log: any) => `${log.id}:${log.timestamp}:${log.action}`).join('|');
+      if (signature !== logSignature.current) {
+        logSignature.current = signature;
+        setLogs(nextLogs);
+      }
     } catch (err) {
       console.error('Failed to fetch offline events:', err);
     }
@@ -33,7 +39,7 @@ export default function MeshMapClient() {
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(fetchLogs, 10000);
+    const interval = setInterval(fetchLogs, 20000);
     return () => clearInterval(interval);
   }, []);
 
