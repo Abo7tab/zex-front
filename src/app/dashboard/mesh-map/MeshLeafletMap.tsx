@@ -31,7 +31,7 @@ export default function MeshLeafletMap({ logs }: { logs: any[] }) {
       lat: parseFloat(log.payload.lat),
       lng: parseFloat(log.payload.lng),
       targetUid: log.payload.target_uid || 'Unknown Target',
-      finderName: log.device_name || 'Unknown Finder',
+      deviceLabel: log.device_name || 'Unknown Device',
       message: log.message,
       timestamp: log.timestamp
     }
@@ -58,7 +58,7 @@ export default function MeshLeafletMap({ logs }: { logs: any[] }) {
             <div className="font-sans text-slate-800">
               <h3 className="font-bold border-b pb-1 mb-2">Offline Intercept</h3>
               <p className="text-xs mb-1"><strong>Target UID:</strong> {point.targetUid}</p>
-              <p className="text-xs mb-1"><strong>Found By:</strong> {point.finderName}</p>
+              <p className="text-xs mb-1"><strong>Device at location:</strong> {point.deviceLabel}</p>
               <p className="text-xs mb-1 text-blue-600 font-semibold">{point.message}</p>
               <p className="text-[10px] text-gray-500 mt-2">{new Date(point.timestamp).toLocaleString()}</p>
             </div>
