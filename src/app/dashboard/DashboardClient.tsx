@@ -99,8 +99,8 @@ export default function DashboardClient() {
   const rawLat = locObj.latitude ?? device?.last_location?.latitude;
   const rawLng = locObj.longitude ?? device?.last_location?.longitude;
   const rawAcc = locObj.accuracy ?? device?.last_location?.accuracy;
-  const latitude: number  = rawLat ? Number(rawLat) : 24.7136;
-  const longitude: number = rawLng ? Number(rawLng) : 46.6753;
+  const latitude: number  = rawLat ? Number(rawLat) : 0;
+  const longitude: number = rawLng ? Number(rawLng) : 0;
   const accuracy: number  = rawAcc ? Number(rawAcc) : 0;
   const relaySource = statusObj.relay_source ?? locObj.relay_source ?? device?.relay_source ?? device?.last_location?.relay_source;
 
@@ -159,8 +159,8 @@ export default function DashboardClient() {
   const handleStopStolenClick = () => { if (!device) return; setShowPinModal(true); };
   const handleMarkFound    = async () => { if (!device) return; setActionLoading(true); try { await markFound(device.id, pinInput.trim()); setShowPinModal(false); setPinInput(''); setDevice((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); setRtState((p:any)=>p?{...p,is_stolen:false,is_screaming:false,is_searching:false}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Invalid 6-digit PIN'); } finally { setActionLoading(false); } };
   const handleDeleteClick  = () => { if (!device) return; setShowDeleteModal(true); };
-  const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
-  const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
+  const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('Failed to Remove Device. Invalid Password.'); } finally { setActionLoading(false); } };
+  const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Failed to Remove Device. Invalid Password.'); } finally { setActionLoading(false); } };
 
     const commands = [
       { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
@@ -345,7 +345,7 @@ export default function DashboardClient() {
                     {isStolen ? <AlertTriangle className="w-4 h-4 animate-pulse" /> : <ShieldCheck className="w-4 h-4" />}
                   </div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-sm">{isStolen ? '⚠ سرقة: Protocol الطوارئ Active' : 'TACTICAL STATUS: DEFCON-5 NOMINAL'}</span>
+                    <span className="font-bold text-sm">{isStolen ? '⚠ سرقة: Protocol الطوارئ Active' : 'TACTICAL STATUS: SYSTEM ONLINE'}</span>
                     <span className={`text-[11px] ${isStolen ? 'text-red-700' : 'text-slate-500'}`}>{isStolen ? 'التتبع السري Active — AES-256 E2EE' : 'All systems operating within standard parameters. — DEFCON-5'}</span>
                   </div>
                 </div>
@@ -384,7 +384,7 @@ export default function DashboardClient() {
                           </div>
                         </div>
                         <a
-                          href={`https://www.google.com/maps?q=${latitude || 24.7136},${longitude || 46.6753}`}
+                          href={`https://www.google.com/maps?q=${latitude || 0},${longitude || 0}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition-all"
@@ -400,7 +400,7 @@ export default function DashboardClient() {
                         <Battery className={`w-2.5 h-2.5 ${batteryLevel > 20 ? 'text-emerald-500' : 'text-rose-500'}`} />
                       </div>
                       <div className={`flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        <Wifi className="w-2.5 h-2.5" />{isOnline ? 'Protocol: Active' : 'Offline'}
+                        <Wifi className="w-2.5 h-2.5" />{isOnline ? 'Protocol: Standard' : 'Offline'}
                       </div>
                       {isPowerSaver && (
                         <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
@@ -500,7 +500,7 @@ export default function DashboardClient() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteModal(false)} className="flex-1 py-3 rounded-xl font-bold text-slate-600 bg-slate-100 text-sm">Cancel</button>
-              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white disabled:opacity-50 text-sm">Purge</button>
+              <button onClick={handleDeleteDevice} disabled={actionLoading} className="flex-1 py-3 rounded-xl font-bold bg-red-600 text-white disabled:opacity-50 text-sm">Remove Device</button>
             </div>
           </div>
         </div>
@@ -545,3 +545,4 @@ export default function DashboardClient() {
     </div>
   );
 }
+
