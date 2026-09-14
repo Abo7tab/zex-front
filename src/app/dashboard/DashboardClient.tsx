@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice, togglePowerSaver } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
@@ -64,6 +64,7 @@ export default function DashboardClient() {
   const [serverActivity, setServerActivity] = useState<any[]>([]);
   const [activityVisibleCount, setActivityVisibleCount] = useState(5);
   const [selectedActivityIds, setSelectedActivityIds] = useState<number[]>([]);
+  const devicesRefreshInFlight = useRef(false);
 
   const allLogs = useTerminalStore((state) => state.logs);
   const activityLines = serverActivity.map((entry) =>
@@ -167,15 +168,32 @@ export default function DashboardClient() {
   });
 
   async function fetchDevicesInner() {
+    if (devicesRefreshInFlight.current) return;
+    devicesRefreshInFlight.current = true;
     try {
       const fetched = await getDevices();
       if (fetched && fetched.length > 0) {
         setDevices(fetched);
         setDevice((prev: any) => { if (prev) { const m = fetched.find((d: any) => d.id === prev.id); if (m) return m; } return fetched[0]; });
       } else { setDevices([]); setDevice(null); }
-    } catch { setDevices([]); setDevice(null); }
+    } catch { /* Keep the last known device state during a transient network failure. */ }
+    finally { devicesRefreshInFlight.current = false; }
   }
   const fetchDevices = () => fetchDevicesInner();
+
+  // Keep newly registered devices and server-side status changes visible without
+  // a full page reload. Firebase remains the fast path for the selected device.
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState === 'visible') fetchDevicesInner(); };
+    const interval = window.setInterval(refresh, 10000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
 
   const optimisticPing = () => {
     if (!device) return;
