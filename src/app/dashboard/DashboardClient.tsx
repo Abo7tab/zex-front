@@ -185,6 +185,7 @@ export default function DashboardClient() {
       { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
       { label: 'Scream Alert',          sub: isScreaming ? 'Mute Siren' : 'Force Siren',      icon: isScreaming ? <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" /> : <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: isScreaming ? 'slate' : 'blue', onClick: isScreaming ? handleStopScreamClick : handleStartScream, disabled: !device },
       { label: 'GPS Locate',            sub: 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleLocate, disabled: !device || actionLoading },
+      { label: isSearching ? 'Stop BLE Radar' : 'BLE Radar', sub: isSearching ? 'Stop peer discovery' : 'Start offline discovery', icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: isSearching ? 'slate' : 'indigo', onClick: isSearching ? handleStopSearch : handleStartSearch, disabled: !device || actionLoading },
       { label: 'Mark Stolen',           sub: 'Lock Protocol',    icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'rose', onClick: handleStartStolen, disabled: !!isStolen || !device },
       { label: 'Unmark Stolen',         sub: 'Recovered Status', icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
       { label: 'Remove Device',         sub: 'Delete Record',    icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'slate', onClick: handleDeleteClick, disabled: !device || actionLoading },
@@ -459,6 +460,44 @@ export default function DashboardClient() {
                     </div>
                   </button>
                 ))}
+              </div>
+
+              {/* ── Offline operations timeline ── */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-slate-200/80 shadow-sm">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <Bluetooth className="w-4 h-4 text-indigo-600" />
+                    <div>
+                      <h2 className="text-sm font-extrabold text-slate-800">Offline Search Activity</h2>
+                      <p className="text-[10px] text-slate-500">SMS and BLE discoveries for the selected target</p>
+                    </div>
+                  </div>
+                  <button onClick={() => router.push('/logs')} className="text-[10px] font-bold text-blue-600 hover:text-blue-800">View all</button>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {serverActivity.filter((entry: any) => {
+                    const payload = entry?.payload || {};
+                    const target = String(payload.target_uid || '');
+                    return !device?.device_uid || target === device.device_uid || target.endsWith(String(device.device_uid).slice(-8));
+                  }).slice(0, 5).map((entry: any, index: number) => {
+                    const payload = entry?.payload || {};
+                    const source = String(payload.source || entry.action || 'activity');
+                    return (
+                      <div key={`${entry.id || 'event'}-${index}`} className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
+                            <span className={`h-1.5 w-1.5 rounded-full ${source.includes('BLE') ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
+                            {source}
+                          </div>
+                          <p className="text-[11px] text-slate-600 truncate">{entry.message || 'Offline event received'}</p>
+                          {payload.lat && payload.lng && <p className="font-mono text-[10px] text-blue-600">{payload.lat}, {payload.lng}</p>}
+                        </div>
+                        <span className="shrink-0 text-[9px] text-slate-400">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('en-GB') : '--'}</span>
+                      </div>
+                    );
+                  })}
+                  {serverActivity.length === 0 && <p className="py-5 text-center text-xs text-slate-400">Waiting for SMS or BLE discovery events...</p>}
+                </div>
               </div>
 
               {/* ── Terminal Log ── */}
