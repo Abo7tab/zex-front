@@ -13,7 +13,6 @@ import { Shield, Zap, User, Smartphone, Search, AlertTriangle, ShieldCheck,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import SettingsModal from '@/components/modals/SettingsModal';
-import ThemeToggle from '@/components/ThemeToggle';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 
@@ -378,7 +377,6 @@ export default function DashboardClient() {
           </div>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
             <button onClick={() => alert('SOS BROADCAST SENT')} className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-2.5 py-1.5 text-xs font-bold active:scale-95 transition-transform hover:bg-rose-100">
               <AlertTriangle className="w-3.5 h-3.5 animate-pulse shrink-0" />
               <span className="hidden xs:inline">SOS</span>
