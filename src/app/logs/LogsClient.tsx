@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
-import { Shield, Search, X, Copy, Check, ChevronLeft, ChevronRight, ArrowRight, Eye, Code } from 'lucide-react';
+import { Shield, Search, X, Copy, Check, ChevronLeft, ChevronRight, ArrowRight, Eye, Code, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 function SeverityBadge({ s }: { s: string }) {
@@ -33,6 +33,7 @@ export default function LogsClient() {
   // Modal
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   useEffect(() => {
     // Fetch real logs
@@ -57,6 +58,18 @@ export default function LogsClient() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const toggleSelected = (id: number) => {
+    setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  };
+
+  const deleteLogs = async (ids: number[]) => {
+    if (!ids.length || !window.confirm(`Delete ${ids.length} activity record(s)?`)) return;
+    await Promise.all(ids.map(id => api.delete(`/logs/${id}`)));
+    setLogs(current => current.filter(log => !ids.includes(Number(log.id))));
+    setSelectedIds(current => current.filter(id => !ids.includes(id)));
+    if (selectedLog && ids.includes(Number(selectedLog.id))) setSelectedLog(null);
   };
 
   const activityKind = (log: any) => {
@@ -164,6 +177,13 @@ export default function LogsClient() {
               </button>
             ))}
           </div>
+          <button
+            onClick={() => deleteLogs(selectedIds)}
+            disabled={selectedIds.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-100"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Delete selected ({selectedIds.length})
+          </button>
         </div>
 
         {/* Table */}
@@ -172,6 +192,7 @@ export default function LogsClient() {
             <table className="w-full text-right text-sm">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-xs">
                 <tr>
+                  <th className="px-3 py-3 w-10"><input type="checkbox" aria-label="Select all visible" checked={paginatedLogs.length > 0 && paginatedLogs.every(log => selectedIds.includes(Number(log.id)))} onChange={event => setSelectedIds(current => event.target.checked ? Array.from(new Set([...current, ...paginatedLogs.map(log => Number(log.id))])) : current.filter(id => !paginatedLogs.some(log => Number(log.id) === id)))} /></th>
                   <th className="px-4 py-3">Timestamp</th>
                   <th className="px-4 py-3">Node / Device</th>
                   <th className="px-4 py-3">Severity</th>
@@ -184,6 +205,7 @@ export default function LogsClient() {
                 {paginatedLogs.length > 0 ? (
                   paginatedLogs.map((log) => (
                     <tr key={log.id} className={`hover:bg-slate-50 transition-colors ${log.severity === 'critical' ? 'border-l-4 border-l-red-500 bg-red-50/20' : log.severity === 'warning' ? 'border-l-4 border-l-yellow-400 bg-yellow-50/20' : 'border-l-4 border-l-transparent'}`}>
+                      <td className="px-3 py-3"><input type="checkbox" aria-label={`Select activity ${log.id}`} checked={selectedIds.includes(Number(log.id))} onChange={() => toggleSelected(Number(log.id))} /></td>
                       <td className="px-4 py-3 font-mono text-xs text-slate-500" dir="ltr">
                         {new Date(log.timestamp).toLocaleString('en-GB')}
                       </td>
@@ -222,7 +244,7 @@ export default function LogsClient() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-slate-400">
+                    <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Shield className="w-8 h-8 opacity-20" />
                         <span className="text-sm font-bold">No forensic records match current query</span>
@@ -295,6 +317,12 @@ export default function LogsClient() {
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copied!' : 'Copy Payload'}
+              </button>
+              <button
+                onClick={() => deleteLogs([Number(selectedLog.id)])}
+                className="flex items-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
             </div>
             
