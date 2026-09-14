@@ -5,8 +5,7 @@ import { getMe, logout } from '@/lib/auth';
 import { getDevices, locateDevice, screamDevice, stopScreamDevice, startSearchMode, stopSearchMode, markStolen, markFound, deleteDevice, togglePowerSaver } from '@/lib/api/devices';
 import { subscribeToDeviceState } from '@/lib/firebase';
 import { useTerminalStore } from '@/store/useTerminalStore';
-import {
-  Shield, User, Smartphone, Search, AlertTriangle, ShieldCheck,
+import { Shield, Zap, User, Smartphone, Search, AlertTriangle, ShieldCheck,
   Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings,
   Eye, EyeOff, LogOut, Radar, MapPin, Crosshair,
   Bluetooth, BluetoothSearching, CheckCircle,
@@ -164,6 +163,7 @@ export default function DashboardClient() {
   const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Failed to Purge Device. Invalid Password.'); } finally { setActionLoading(false); } };
 
   const commands = [
+        { label: 'Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Extreme Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device },
     { label: 'Scream Alert',    sub: 'Force Siren',      icon: <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'blue',    onClick: handleStartScream,    disabled: !!isScreaming || !device },
     { label: 'Silence Alert',   sub: 'Mute Alarm',       icon: <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" />,          color: 'slate',   onClick: handleStopScreamClick, disabled: !isScreaming || !device },
     { label: 'GPS Locate',      sub: 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />,           color: 'emerald', onClick: handleLocate,         disabled: !device },
@@ -405,6 +405,18 @@ export default function DashboardClient() {
                       </div>
                       <div className={`flex items-center gap-1 ${isOnline ? 'text-emerald-600' : 'text-rose-600'}`}>
                         <Wifi className="w-2.5 h-2.5" />{isOnline ? 'Protocol: Active' : 'Offline'}
+                      </div>
+                      {isPowerSaver && (
+                        <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                          <Zap className="w-2.5 h-2.5" />Power Saver
+                        </div>
+                      )}
+                      {isPowerSaver && (
+                        <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 ml-2">
+                          <Zap className="w-2.5 h-2.5" />Power Saver
+                        </div>
+                      )}
+                      <div>
                       </div>
                     </div>
                   </div>
