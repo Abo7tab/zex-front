@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import api from '@/lib/axios';
-import { ArrowLeft, MapPinned, Bluetooth, MessageSquare, MapPin, Clock, Activity } from 'lucide-react';
+import { ArrowLeft, MapPinned, Bluetooth, MessageSquare, MapPin, Clock, Activity, Trash2, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const MeshLeafletMap = dynamic(() => import('./MeshLeafletMap'), {
@@ -18,6 +18,8 @@ const MeshLeafletMap = dynamic(() => import('./MeshLeafletMap'), {
 export default function MeshMapClient() {
   const [logs, setLogs] = useState<any[]>([]);
   const [filter, setFilter] = useState('all');
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const router = useRouter();
 
   const fetchLogs = async () => {
@@ -44,6 +46,18 @@ export default function MeshMapClient() {
     return true;
   });
   const locationCount = logs.filter(log => log?.payload?.lat != null && log?.payload?.lng != null).length;
+  const visibleLogs = filteredLogs.slice(0, visibleCount);
+
+  const toggleSelected = (id: number) => {
+    setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  };
+
+  const deleteLogs = async (ids: number[]) => {
+    if (!ids.length || !window.confirm(`Delete ${ids.length} activity record(s)?`)) return;
+    await Promise.all(ids.map(id => api.delete(`/logs/${id}`)));
+    setLogs(current => current.filter(log => !ids.includes(Number(log.id))));
+    setSelectedIds(current => current.filter(id => !ids.includes(id)));
+  };
 
   return (
     <div className="flex flex-col min-h-screen h-screen bg-slate-900 text-slate-100">
@@ -63,7 +77,7 @@ export default function MeshMapClient() {
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {[['all', 'All events'], ['BLE', 'BLE discoveries'], ['SMS', 'SMS relays'], ['LOCATION', 'With coordinates']].map(([id, label]) => (
-            <button key={id} onClick={() => setFilter(id)} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold border ${filter === id ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`}>
+            <button key={id} onClick={() => { setFilter(id); setVisibleCount(20); setSelectedIds([]); }} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold border ${filter === id ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`}>
               {id === 'BLE' ? <Bluetooth className="w-3.5 h-3.5" /> : id === 'SMS' ? <MessageSquare className="w-3.5 h-3.5" /> : <MapPin className="w-3.5 h-3.5" />}
               {label}
             </button>
@@ -76,14 +90,20 @@ export default function MeshMapClient() {
       <div className="mx-4 sm:mx-6 mb-6 rounded-xl border border-slate-700 bg-slate-800 overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
           <h2 className="text-sm font-bold text-white">Offline Event Details</h2>
-          <span className="text-xs text-slate-400">{filteredLogs.length} shown</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-400">{visibleLogs.length} of {filteredLogs.length} shown</span>
+            <button onClick={() => deleteLogs(selectedIds)} disabled={selectedIds.length === 0} className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/10 border border-rose-400/30 px-2.5 py-1.5 text-[10px] font-bold text-rose-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-500/20">
+              <Trash2 className="w-3 h-3" /> Delete selected ({selectedIds.length})
+            </button>
+          </div>
         </div>
         <div className="divide-y divide-slate-700">
-          {filteredLogs.slice(0, 20).map((log, index) => {
+          {visibleLogs.map((log, index) => {
             const source = String(log?.payload?.source || log?.action || 'SYSTEM').toUpperCase();
             const hasLocation = log?.payload?.lat != null && log?.payload?.lng != null;
             return (
               <div key={`${log.id || 'event'}-${index}`} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <input type="checkbox" aria-label={`Select event ${log.id || index}`} checked={selectedIds.includes(Number(log.id))} onChange={() => toggleSelected(Number(log.id))} className="accent-blue-500 shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
                     {source.includes('BLE') ? <Bluetooth className="w-3.5 h-3.5 text-indigo-400" /> : source.includes('SMS') ? <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> : <Activity className="w-3.5 h-3.5 text-slate-400" />}
@@ -101,6 +121,13 @@ export default function MeshMapClient() {
           })}
           {filteredLogs.length === 0 && <div className="px-4 py-8 text-center text-sm text-slate-500">No events match this filter.</div>}
         </div>
+        {visibleCount < filteredLogs.length && (
+          <div className="border-t border-slate-700 p-3 text-center">
+            <button onClick={() => setVisibleCount(current => current + 20)} className="inline-flex items-center gap-2 rounded-lg border border-slate-600 bg-slate-700 px-4 py-2 text-xs font-bold text-slate-200 hover:bg-slate-600">
+              <ChevronDown className="w-3.5 h-3.5" /> Show more events
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
