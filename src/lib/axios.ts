@@ -23,7 +23,7 @@ api.interceptors.request.use(
     
     const method = config.method?.toUpperCase() || 'GET';
     const url = config.url || '';
-    const time = new Date().toISOString().substring(11, 19) + 'Z';
+    const time = new Date().toLocaleTimeString('en-GB');
     
     if (typeof window !== 'undefined') {
       useTerminalStore.getState().addLog(`[${time}] SYS//REQ > [${method}] ${url}`);
@@ -39,7 +39,7 @@ api.interceptors.response.use(
     const config = response.config as any;
     const duration = new Date().getTime() - (config.metadata?.startTime?.getTime() || new Date().getTime());
     const method = config.method?.toUpperCase() || 'GET';
-    const time = new Date().toISOString().substring(11, 19) + 'Z';
+    const time = new Date().toLocaleTimeString('en-GB');
     
     if (typeof window !== 'undefined') {
       useTerminalStore.getState().addLog(`[${time}] SYS//RES > [200 OK] (${duration}ms) ${config.url}`);
@@ -50,7 +50,7 @@ api.interceptors.response.use(
   (error) => {
     const config = error.config as any;
     const duration = config ? new Date().getTime() - (config.metadata?.startTime?.getTime() || new Date().getTime()) : 0;
-    const time = new Date().toISOString().substring(11, 19) + 'Z';
+    const time = new Date().toLocaleTimeString('en-GB');
     const status = error.response?.status || 'ERR';
     const msg = error.response?.data?.message || error.message;
     

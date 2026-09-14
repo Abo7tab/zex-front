@@ -449,14 +449,14 @@ export default function DashboardClient() {
                 <div className="flex-1 overflow-y-auto space-y-1 flex flex-col-reverse font-mono text-left" dir="ltr">
                   {(logs.length > 0) ? [...logs].reverse().map((log, i) => (
                     <div key={i} className="flex items-start gap-2 border-l-2 border-slate-700/50 pr-2">
-                      <span className="text-slate-500 shrink-0 text-[9px] sm:text-[10px]">[{new Date().toISOString().split('T')[1].slice(0, 8)}]</span>
+                      <span className="text-slate-500 shrink-0 text-[9px] sm:text-[10px]">[{new Date().toLocaleTimeString('en-GB')}]</span>
                       <span className={`break-all text-[10px] sm:text-xs ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
                         <span className="text-blue-400">$ </span>{log}
                       </span>
                     </div>
                   )) : (
                     <div className="flex items-start gap-2 border-l-2 border-slate-700/50 pr-2">
-                      <span className="text-slate-500">[{new Date().toISOString().split('T')[1].slice(0, 8)}]</span>
+                      <span className="text-slate-500">[{new Date().toLocaleTimeString('en-GB')}]</span>
                       <span className="text-slate-400"><span className="text-blue-400">$ </span>Monitoring secure channels...</span>
                     </div>
                   )}
