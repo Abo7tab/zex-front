@@ -34,8 +34,8 @@ export default function MeshLeafletMap({ logs }: { logs: any[] }) {
     return {
       lat: parseFloat(log.payload.lat),
       lng: parseFloat(log.payload.lng),
-      targetUid: log.payload.target_uid || 'Unknown Target',
-      targetLabel: log.payload?.target_uid || 'Unknown Device',
+      targetUid: log.payload.target_uid || 'Unknown',
+      targetLabel: log.target_device_name || log.payload?.target_uid || 'Unknown Target',
       relayLabel: log.device_name || 'Unknown Relay',
       message: log.message,
       timestamp: log.timestamp
@@ -55,20 +55,19 @@ export default function MeshLeafletMap({ logs }: { logs: any[] }) {
     <MapContainer center={[30.0, 31.0]} zoom={4} className="w-full h-full" style={{ background: '#1e293b' }}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; OpenStreetMap contributors'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-      <MapBoundsFitter bounds={bounds} />
+      {bounds && <MapBoundsFitter bounds={bounds} />}
       
       {validPoints.map((point, idx) => (
         <Marker key={idx} position={[point.lat, point.lng]}>
           <Popup>
             <div className="font-sans text-slate-800">
               <h3 className="font-bold border-b pb-1 mb-2">Offline Intercept</h3>
-              <p className="text-xs mb-1"><strong>Target UID:</strong> {point.targetUid}</p>
-              <p className="text-xs mb-1"><strong>Target at location:</strong> {point.targetLabel}</p>
+              <p className="text-xs mb-1"><strong>Target device:</strong> {point.targetLabel}</p>
               <p className="text-xs mb-1"><strong>Relay device:</strong> {point.relayLabel}</p>
               <p className="text-xs mb-1 text-blue-600 font-semibold">{point.message}</p>
-              <p className="text-[10px] text-gray-500 mt-2">{new Date(point.timestamp).toLocaleString()}</p>
+              <p className="text-[10px] text-gray-500 mt-2">{new Date(point.timestamp).toLocaleString('en-GB')}</p>
             </div>
           </Popup>
         </Marker>
