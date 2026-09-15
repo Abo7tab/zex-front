@@ -426,9 +426,9 @@ export default function DashboardClient() {
               </div>
 
               {/* ── Map ── */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-slate-200/80 shadow-sm relative">
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-1.5 sm:p-4 border border-slate-200/80 shadow-sm relative">
                 {/* Map container */}
-                <div className="w-full min-h-[420px] h-[420px] rounded-xl overflow-hidden border border-slate-200 relative bg-slate-100">
+                <div className="w-full h-[280px] sm:h-[360px] lg:h-[420px] rounded-xl overflow-hidden border border-slate-200 relative bg-slate-100">
                   <div className="absolute inset-0 z-0">
                     {memoizedDeviceMap}
                   </div>
@@ -527,7 +527,11 @@ export default function DashboardClient() {
                             {source}
                           </div>
                           <p className="text-[11px] text-slate-600 truncate">{entry.message || 'Offline event received'}</p>
-                          {payload.lat && payload.lng && <p className="font-mono text-[10px] text-blue-600">{payload.lat}, {payload.lng}</p>}
+                          {payload.lat && payload.lng && (
+                            <a href={`https://www.google.com/maps?q=${payload.lat},${payload.lng}`} target="_blank" rel="noreferrer" className="inline-block font-mono text-[10px] text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded mt-1 mb-0.5">
+                              📍 {payload.lat}, {payload.lng}
+                            </a>
+                          )}
                           {payload.distance_meters && <p className="font-mono text-[10px] text-cyan-600">Range {Number(payload.distance_meters).toFixed(1)}m · {payload.proximity || 'SEARCHING'}</p>}
                           {entry.metadata && <p className="font-mono text-[9px] text-slate-400">{Object.entries(entry.metadata).filter(([key]) => key.endsWith('_at')).map(([key, value]) => `${key.replace('_at', '')}: ${new Date(String(value)).toLocaleTimeString('en-GB')}`).join(' • ')}</p>}
                         </div>
