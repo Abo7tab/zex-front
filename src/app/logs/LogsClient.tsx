@@ -197,6 +197,7 @@ export default function LogsClient() {
                   <th className="px-4 py-3">Node / Device</th>
                   <th className="px-4 py-3">Severity</th>
                   <th className="px-4 py-3">Operation Type</th>
+
                   <th className="px-4 py-3">Timeline / Details</th>
                   <th className="px-4 py-3 w-16">Details</th>
                 </tr>
@@ -209,8 +210,14 @@ export default function LogsClient() {
                       <td className="px-4 py-3 font-mono text-xs text-slate-500" dir="ltr">
                         {new Date(log.timestamp).toLocaleString('en-GB')}
                       </td>
-                      <td className="px-4 py-3 font-bold text-slate-800 text-xs font-mono">
-                        {log.device_name}
+                      <td className="px-4 py-3 text-xs font-mono min-w-[180px]">
+                        <div className="font-bold text-slate-800">{log.device_name || '—'}</div>
+                        {log.target_device_name && (
+                          <div className="mt-0.5 text-[10px] text-slate-400">
+                            <span className="text-slate-500">Target: </span>
+                            <span className="text-indigo-600 font-bold">{log.target_device_name}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <SeverityBadge s={log.severity} />
