@@ -116,20 +116,49 @@ export default function MeshMapClient() {
             const source = String(log?.payload?.source || log?.action || 'SYSTEM').toUpperCase();
             const hasLocation = log?.payload?.lat != null && log?.payload?.lng != null;
             return (
-              <div key={`${log.id || 'event'}-${index}`} className="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <input type="checkbox" aria-label={`Select event ${log.id || index}`} checked={selectedIds.includes(Number(log.id))} onChange={() => toggleSelected(Number(log.id))} className="accent-blue-500 shrink-0" />
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
-                    {source.includes('BLE') ? <Bluetooth className="w-3.5 h-3.5 text-indigo-400" /> : source.includes('SMS') ? <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> : <Activity className="w-3.5 h-3.5 text-slate-400" />}
-                    <span>{source}</span>
-                    <span className="text-slate-500">Target: {log.payload?.target_uid || 'Unknown device'}</span>
+              <div key={`${log.id || 'event'}-${index}`} className="flex items-start gap-3 px-4 py-3">
+                <input type="checkbox" aria-label={`Select event ${log.id || index}`} checked={selectedIds.includes(Number(log.id))} onChange={() => toggleSelected(Number(log.id))} className="accent-blue-500 shrink-0 mt-1" />
+                {/* Horizontally scrollable row */}
+                <div className="overflow-x-auto flex-1">
+                  <div className="flex items-center gap-6 min-w-max text-[11px] font-mono pb-1">
+                    {/* Source badge */}
+                    <span className="inline-flex items-center gap-1.5 font-bold text-slate-200 shrink-0">
+                      {source.includes('BLE') ? <Bluetooth className="w-3.5 h-3.5 text-indigo-400" /> : source.includes('SMS') ? <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> : <Activity className="w-3.5 h-3.5 text-slate-400" />}
+                      {source}
+                    </span>
+                    {/* Target UID */}
+                    <span className="text-slate-400 shrink-0">
+                      <span className="text-slate-600 mr-1">Target:</span>
+                      {log.payload?.target_uid || 'Unknown'}
+                    </span>
+                    {/* Relay device */}
+                    <span className="text-slate-400 shrink-0">
+                      <span className="text-slate-600 mr-1">Relay:</span>
+                      {log.device_name || 'Unknown'}
+                    </span>
+                    {/* Message */}
+                    <span className="text-slate-500 shrink-0" title={log.message || ''}>
+                      {log.message || 'Activity logged'}
+                    </span>
+                    {/* Coordinates */}
+                    {hasLocation
+                      ? <a className="text-blue-400 hover:underline shrink-0" href={`https://www.google.com/maps?q=${log.payload.lat},${log.payload.lng}`} target="_blank" rel="noreferrer">
+                          📍 {log.payload.lat}, {log.payload.lng}
+                        </a>
+                      : <span className="text-amber-400 shrink-0">No coordinates</span>
+                    }
+                    {/* Distance */}
+                    {log.payload?.distance_meters != null && (
+                      <span className="text-cyan-300 shrink-0">
+                        {Number(log.payload.distance_meters).toFixed(1)}m · {log.payload.proximity || 'SEARCHING'}
+                      </span>
+                    )}
+                    {/* Timestamp */}
+                    <span className="text-slate-500 inline-flex items-center gap-1 shrink-0">
+                      <Clock className="w-3 h-3" />
+                      {log.timestamp ? new Date(log.timestamp).toLocaleString('en-GB') : '--'}
+                    </span>
                   </div>
-                  <p className="mt-1 text-xs text-slate-400 truncate">{log.message || 'Activity logged'} · Relay: {log.device_name || 'Unknown device'}</p>
-                </div>
-                <div className="flex items-center gap-4 text-[10px] font-mono shrink-0">
-                  {hasLocation ? <a className="text-blue-400 hover:underline" href={`https://www.google.com/maps?q=${log.payload.lat},${log.payload.lng}`} target="_blank" rel="noreferrer">{log.payload.lat}, {log.payload.lng}</a> : <span className="text-amber-400">No coordinates</span>}
-                  {log.payload?.distance_meters != null && <span className="text-cyan-300">{Number(log.payload.distance_meters).toFixed(1)}m · {log.payload.proximity || 'SEARCHING'}</span>}
-                  <span className="text-slate-500 inline-flex items-center gap-1"><Clock className="w-3 h-3" />{log.timestamp ? new Date(log.timestamp).toLocaleString('en-GB') : '--'}</span>
                 </div>
               </div>
             );
