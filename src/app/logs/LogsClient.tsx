@@ -267,7 +267,7 @@ export default function LogsClient() {
                         )}
                       </td>
                       <td className="px-4 py-3">
-                        <SeverityBadge s={log.severity} />
+                        <SeverityBadge s={log.severity || 'info'} />
                       </td>
                       <td className="px-4 py-3 font-mono text-xs font-bold text-slate-700">
                         <div>{log.action}</div>
