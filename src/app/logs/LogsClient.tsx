@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
-import { Shield, Search, X, Copy, Check, ChevronLeft, ChevronRight, ArrowRight, Eye, Code, Trash2 } from 'lucide-react';
+import { Shield, Search, X, Copy, Check, ChevronLeft, ChevronRight, ArrowRight, Eye, Code, Trash2, Clock3 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 function SeverityBadge({ s }: { s: string }) {
@@ -14,12 +14,48 @@ function SeverityBadge({ s }: { s: string }) {
   return <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${map[s] || map.info}`}>{labels[s] || s}</span>;
 }
 
+type LogPayload = {
+  source?: string;
+  target_uid?: string;
+  lat?: number | string;
+  lng?: number | string;
+  distance_meters?: number | string;
+  proximity?: string;
+  [key: string]: unknown;
+};
 
+type LogMetadata = {
+  command_id?: number | string;
+  command_type?: string;
+  status?: string;
+  queued_at?: string;
+  sent_at?: string;
+  received_at?: string;
+  executed_at?: string;
+  [key: string]: unknown;
+};
+
+type AuditLog = {
+  id: number | string;
+  timestamp: string;
+  expires_at?: string | null;
+  retention_warning?: boolean;
+  retention_warning_message?: string | null;
+  can_extend_retention?: boolean;
+  action?: string;
+  device_name?: string;
+  device_uid?: string;
+  target_device_name?: string;
+  severity?: string;
+  message?: string;
+  payload?: LogPayload | null;
+  metadata?: LogMetadata;
+  type?: string;
+};
 
 export default function LogsClient() {
   const router = useRouter();
-  const [logs, setLogs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
   
   // Filters
   const [search, setSearch] = useState('');
@@ -31,7 +67,7 @@ export default function LogsClient() {
   const itemsPerPage = 10;
   
   // Modal
-  const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const [copied, setCopied] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
@@ -44,8 +80,7 @@ export default function LogsClient() {
       })
       .catch(() => {
         setLogs([]);
-      })
-      .finally(() => setLoading(false));
+      });
 
     loadLogs();
     const refresh = setInterval(loadLogs, 10000);
@@ -72,7 +107,19 @@ export default function LogsClient() {
     if (selectedLog && ids.includes(Number(selectedLog.id))) setSelectedLog(null);
   };
 
-  const activityKind = (log: any) => {
+  const extendLogRetention = async (log: AuditLog) => {
+    if (!log?.can_extend_retention) return;
+    const res = await api.post(`/logs/${log.id}/extend-retention`);
+    const patch = {
+      ...res.data,
+      retention_warning: false,
+      retention_warning_message: null,
+    };
+    setLogs(current => current.map(item => Number(item.id) === Number(log.id) ? { ...item, ...patch } : item));
+    setSelectedLog((current: AuditLog | null) => current && Number(current.id) === Number(log.id) ? { ...current, ...patch } : current);
+  };
+
+  const activityKind = (log: AuditLog) => {
     const source = String(log?.payload?.source || '').toUpperCase();
     const action = String(log?.action || '').toUpperCase();
     if (source.includes('BLE') || action.includes('BLE')) return 'BLE';
@@ -228,9 +275,23 @@ export default function LogsClient() {
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-500 min-w-[260px]">
                         <div className="font-semibold text-slate-700">{log.message || 'Activity logged'}</div>
+                        {log.retention_warning && (
+                          <div className="mt-2 inline-flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+                            <Clock3 className="w-3 h-3" />
+                            <span>{log.retention_warning_message || 'This log will be deleted soon.'}</span>
+                            {log.can_extend_retention && (
+                              <button
+                                onClick={() => extendLogRetention(log)}
+                                className="rounded-md bg-white px-2 py-0.5 text-amber-800 shadow-sm hover:bg-amber-100"
+                              >
+                                Extend 3 days
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[10px] text-slate-400">
                           {(['queued_at', 'sent_at', 'received_at', 'executed_at'] as const).map(key => log.metadata?.[key] && (
-                            <span key={key}><b>{key.replace('_at', '')}:</b> {new Date(log.metadata[key]).toLocaleTimeString('en-GB')}</span>
+                            <span key={key}><b>{key.replace('_at', '')}:</b> {new Date(String(log.metadata?.[key])).toLocaleTimeString('en-GB')}</span>
                           ))}
                         </div>
                           {log.payload?.lat != null && log.payload?.lng != null && (
@@ -308,6 +369,20 @@ export default function LogsClient() {
             </div>
             
             <div className="p-4 sm:p-5 overflow-y-auto bg-[#0f172a] text-slate-300 font-mono text-[11px] sm:text-xs leading-relaxed" dir="ltr">
+              {selectedLog.retention_warning && (
+                <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-amber-200">
+                  <Clock3 className="w-4 h-4" />
+                  <span>{selectedLog.retention_warning_message || 'This log will be deleted soon.'}</span>
+                  {selectedLog.can_extend_retention && (
+                    <button
+                      onClick={() => extendLogRetention(selectedLog)}
+                      className="rounded-md bg-amber-300 px-2 py-1 text-[10px] font-black text-slate-950 hover:bg-amber-200"
+                    >
+                      Extend 3 days
+                    </button>
+                  )}
+                </div>
+              )}
               <pre className="whitespace-pre-wrap break-all">
                 {JSON.stringify(selectedLog.payload, null, 2).replace(/"(.*?)":/g, '<span class="text-blue-300">"$1"</span>:').replace(/: (true|false|null|[0-9.]+)/g, ': <span class="text-emerald-400">$1</span>').replace(/: "(.*?)"/g, ': <span class="text-amber-300">"$1"</span>')}
               </pre>
