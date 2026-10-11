@@ -373,6 +373,9 @@ export default function DashboardClient() {
   useEffect(() => {
     const loadServerActivity = async () => {
       try {
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+          return;
+        }
         const response = await api.get('/logs');
         setServerActivity(Array.isArray(response.data) ? response.data.slice(0, 80) : []);
       } catch {
@@ -380,9 +383,11 @@ export default function DashboardClient() {
       }
     };
     loadServerActivity();
-    const refresh = setInterval(loadServerActivity, 5000);
+    const isAnyPending = Object.keys(pendingLocates).length > 0;
+    const intervalMs = isAnyPending ? 4000 : 10000;
+    const refresh = setInterval(loadServerActivity, intervalMs);
     return () => clearInterval(refresh);
-  }, []);
+  }, [pendingLocates]);
 
   useEffect(() => {
     try {
@@ -658,7 +663,7 @@ export default function DashboardClient() {
   // a full page reload. Firebase remains the fast path for the selected device.
   useEffect(() => {
     const refresh = () => { if (document.visibilityState === 'visible') fetchDevicesInner(); };
-    const interval = window.setInterval(refresh, 10000);
+    const interval = window.setInterval(refresh, 15000);
     window.addEventListener('focus', refresh);
     document.addEventListener('visibilitychange', refresh);
     return () => {
