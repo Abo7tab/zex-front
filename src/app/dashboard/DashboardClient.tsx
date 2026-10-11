@@ -9,7 +9,7 @@ import { Shield, Zap, User, Smartphone, Search, AlertTriangle, ShieldCheck,
   Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings, Map, Activity,
   Eye, EyeOff, LogOut, Radar, MapPin, Crosshair,
   Bluetooth, BluetoothSearching, CheckCircle,
-  Terminal, ShieldAlert
+  Terminal, ShieldAlert, Copy, Check
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import SettingsModal from '@/components/modals/SettingsModal';
@@ -24,6 +24,120 @@ const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
     </div>
   ),
 });
+
+const IMPORTANT_ACTIVITY_PATTERN = /(command|locate|location|gps|ble|sms|relay|offline|scream|siren|stolen|found|lock|track|power|photo|network|error|fail|proximity)/i;
+const NOISY_CLIENT_LOG_PATTERN = /(?:SYS\/\/(?:REQ|RES).*(?:\/logs|\/devices)|\b(?:REQ|RES)\s+GET\s+\/(?:logs|devices)\b)/i;
+
+const asObject = (value: unknown): Record<string, unknown> => (
+  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
+);
+
+const firstText = (...values: unknown[]) => {
+  for (const value of values) {
+    if (value == null) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return '';
+};
+
+const firstNumber = (...values: unknown[]) => {
+  for (const value of values) {
+    const numberValue = Number(value);
+    if (Number.isFinite(numberValue)) return numberValue;
+  }
+  return null;
+};
+
+const compactCoordinate = (value: number) => Number(value.toFixed(6)).toString();
+
+const formatActivityTime = (timestamp: unknown) => {
+  const time = new Date(String(timestamp || ''));
+  return Number.isNaN(time.getTime()) ? '--:--:--' : time.toLocaleTimeString('en-GB');
+};
+
+const isImportantActivity = (entry: any) => {
+  const payload = asObject(entry?.payload);
+  const metadata = asObject(entry?.metadata);
+  const haystack = [
+    entry?.action,
+    entry?.message,
+    entry?.device_name,
+    entry?.target_device_name,
+    payload.source,
+    payload.transport,
+    payload.proximity,
+    payload.command,
+    metadata.command,
+    metadata.status,
+  ].map((value) => String(value || '')).join(' ');
+
+  return IMPORTANT_ACTIVITY_PATTERN.test(haystack);
+};
+
+const activitySignature = (entry: any) => {
+  const payload = asObject(entry?.payload);
+  const metadata = asObject(entry?.metadata);
+  const lat = firstNumber(payload.lat, payload.latitude, metadata.lat, metadata.latitude);
+  const lng = firstNumber(payload.lng, payload.longitude, metadata.lng, metadata.longitude);
+
+  return [
+    entry?.action,
+    entry?.device_name,
+    entry?.target_device_name,
+    payload.source,
+    payload.transport,
+    payload.target_uid,
+    metadata.command_id,
+    metadata.status,
+    lat == null ? '' : compactCoordinate(lat),
+    lng == null ? '' : compactCoordinate(lng),
+    entry?.message,
+  ].map((value) => String(value || '').trim()).join('|');
+};
+
+const formatActivityLine = (entry: any) => {
+  const payload = asObject(entry?.payload);
+  const metadata = asObject(entry?.metadata);
+  const action = firstText(entry?.action, 'activity').toUpperCase();
+  const message = firstText(entry?.message, 'Activity logged');
+  const deviceName = firstText(entry?.device_name, payload.device_name, payload.source_uid, 'device');
+  const targetName = firstText(entry?.target_device_name, payload.target_name, payload.target_uid);
+  const source = firstText(payload.source, payload.transport, action).toUpperCase();
+  const command = firstText(payload.command, payload.command_type, metadata.command, metadata.command_type);
+  const status = firstText(metadata.status, payload.status);
+  const lat = firstNumber(payload.lat, payload.latitude, metadata.lat, metadata.latitude);
+  const lng = firstNumber(payload.lng, payload.longitude, metadata.lng, metadata.longitude);
+  const distance = firstNumber(payload.distance_meters, metadata.distance_meters, payload.distance);
+  const time = formatActivityTime(entry?.timestamp || entry?.created_at);
+
+  if (command || action.includes('COMMAND')) {
+    const parts = [`[${time}] SERVER CMD`, command || action, `device=${deviceName}`];
+    if (status) parts.push(`status=${status}`);
+    if (targetName) parts.push(`target=${targetName}`);
+    parts.push(`msg="${message}"`);
+    return parts.join(' ');
+  }
+
+  if (/(BLE|SMS|OFFLINE|RELAY|PROXIMITY|LOCATION|GPS)/i.test(`${source} ${action} ${message}`)) {
+    const parts = [`[${time}] OFFLINE`, source.includes('BLE') ? 'BLE' : source.includes('SMS') ? 'SMS' : action, deviceName];
+    if (targetName) parts.push(`-> ${targetName}`);
+    if (lat != null && lng != null) parts.push(`@ ${compactCoordinate(lat)},${compactCoordinate(lng)}`);
+    if (distance != null) parts.push(`range=${distance.toFixed(1)}m`);
+    parts.push(`msg="${message}"`);
+    return parts.join(' ');
+  }
+
+  return `[${time}] SERVER ${action} device=${deviceName} msg="${message}"`;
+};
+
+const terminalLineClass = (line: string) => {
+  if (/\b(ERR|ERROR|FAIL)\b/i.test(line)) return 'text-rose-300';
+  if (/\b(CMD|COMMAND)\b/i.test(line)) return 'text-sky-300';
+  if (/\b(OFFLINE|BLE|SMS|RELAY|PROXIMITY)\b/i.test(line)) return 'text-amber-200';
+  if (/\b(LOCATION|GPS|LOCATE)\b/i.test(line)) return 'text-emerald-300';
+  return 'text-slate-300';
+};
 
 export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(true);
@@ -67,11 +181,38 @@ export default function DashboardClient() {
   const devicesRefreshInFlight = useRef(false);
 
   const allLogs = useTerminalStore((state) => state.logs);
-  const activityLines = serverActivity.map((entry) =>
-    `[SERVER] ${entry.action || 'activity'} • ${entry.device_name || 'device'}: ${entry.message || 'Activity logged'}`
-  );
-  const logs = [...allLogs, ...activityLines].slice(-50);
+  const clearLogs = useTerminalStore((state) => state.clearLogs);
+  const [terminalCopied, setTerminalCopied] = useState(false);
+  const activityLines = useMemo(() => {
+    const seen = new Set<string>();
+
+    return serverActivity
+      .filter(isImportantActivity)
+      .filter((entry) => {
+        const signature = activitySignature(entry);
+        if (seen.has(signature)) return false;
+        seen.add(signature);
+        return true;
+      })
+      .map(formatActivityLine)
+      .slice(0, 30);
+  }, [serverActivity]);
+  const logs = useMemo(() => {
+    const clientLogs = allLogs.filter((log) => !NOISY_CLIENT_LOG_PATTERN.test(log));
+    return [...clientLogs, ...activityLines].slice(0, 80);
+  }, [activityLines, allLogs]);
   const router = useRouter();
+
+  const copyTerminalLogs = useCallback(async () => {
+    if (!logs.length) return;
+    try {
+      await navigator.clipboard.writeText(logs.join('\n'));
+      setTerminalCopied(true);
+      window.setTimeout(() => setTerminalCopied(false), 1500);
+    } catch {
+      alert('Failed to copy debug logs');
+    }
+  }, [logs]);
 
   const offlineActivities = useMemo(() => serverActivity.filter((entry: any) => {
     const payload = entry?.payload || {};
@@ -545,27 +686,48 @@ export default function DashboardClient() {
               </div>
 
               {/* ── Terminal Log ── */}
-              <div className="bg-slate-900 rounded-2xl sm:rounded-3xl p-4 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-48 sm:h-56 flex flex-col relative overflow-hidden mb-2">
+              <div className="bg-slate-950 rounded-2xl sm:rounded-3xl p-4 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-56 sm:h-64 flex flex-col relative overflow-hidden mb-2">
                 <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 via-emerald-400 to-transparent opacity-60" />
-                <div className="flex items-center justify-between border-b border-slate-700/80 pb-2.5 mb-2.5 shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="font-bold text-[10px] text-slate-100 uppercase tracking-widest">Live Audit Stream</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/80 pb-2.5 mb-2.5 shrink-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Terminal className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="font-bold text-[10px] text-slate-100 uppercase tracking-widest">Debug Stream</span>
+                    <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-200">
+                      important only
+                    </span>
                   </div>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={copyTerminalLogs}
+                      disabled={!logs.length}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[10px] font-bold text-slate-200 transition hover:border-sky-500 hover:text-sky-200 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {terminalCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                      {terminalCopied ? 'Copied' : 'Copy'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearLogs}
+                      disabled={!allLogs.length}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[10px] font-bold text-slate-200 transition hover:border-rose-500 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Clear
+                    </button>
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  </div>
                 </div>
-                <div className="flex-1 overflow-y-auto space-y-1 flex flex-col-reverse font-mono text-left" dir="ltr">
-                  {(logs.length > 0) ? [...logs].reverse().map((log, i) => (
-                    <div key={i} className="flex items-start gap-2 border-l-2 border-slate-700/50 pr-2">
-                      <span className="text-slate-500 shrink-0 text-[9px] sm:text-[10px]">[{new Date().toLocaleTimeString('en-GB')}]</span>
-                      <span className={`break-all text-[10px] sm:text-xs ${log.includes('ERROR') ? 'text-rose-400' : log.includes('SUCCESS') ? 'text-emerald-400' : 'text-slate-300'}`}>
-                        <span className="text-blue-400">$ </span>{log}
+                <div className="flex-1 overflow-y-auto space-y-1.5 font-mono text-left pr-1" dir="ltr">
+                  {(logs.length > 0) ? logs.map((log, i) => (
+                    <div key={`${log}-${i}`} className="rounded-lg border border-slate-800 bg-slate-900/65 px-2.5 py-2">
+                      <span className={`break-all text-[10px] leading-relaxed sm:text-xs ${terminalLineClass(log)}`}>
+                        <span className="text-sky-400">$ </span>{log}
                       </span>
                     </div>
                   )) : (
-                    <div className="flex items-start gap-2 border-l-2 border-slate-700/50 pr-2">
-                      <span className="text-slate-500">[{new Date().toLocaleTimeString('en-GB')}]</span>
-                      <span className="text-slate-400"><span className="text-blue-400">$ </span>Monitoring secure channels...</span>
+                    <div className="rounded-lg border border-slate-800 bg-slate-900/65 px-2.5 py-2">
+                      <span className="text-slate-400"><span className="text-sky-400">$ </span>Waiting for command, location, SMS, or BLE events...</span>
                     </div>
                   )}
                 </div>

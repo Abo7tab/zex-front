@@ -10,6 +10,25 @@ const api = axios.create({
   }
 });
 
+const importantRequestPattern = /\/(commands|locate|scream|stop-scream|track|stop-tracking|lock|photo|enable-net|stolen|found|power-saver|search-mode|stop-search|activity-logs|locations)/i;
+const quietPollingPattern = /^\/(?:logs|devices)(?:\?|$)/i;
+
+const shouldLogRequest = (method: string, url: string) => {
+  if (method !== 'GET') return true;
+  return importantRequestPattern.test(url);
+};
+
+const isQuietPollingRequest = (method: string, url: string) => method === 'GET' && quietPollingPattern.test(url);
+
+const byteSize = (value: unknown) => {
+  if (value == null) return 0;
+  try {
+    return new Blob([typeof value === 'string' ? value : JSON.stringify(value)]).size;
+  } catch {
+    return 0;
+  }
+};
+
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
@@ -25,8 +44,8 @@ api.interceptors.request.use(
     const url = config.url || '';
     const time = new Date().toLocaleTimeString('en-GB');
     
-    if (typeof window !== 'undefined') {
-      useTerminalStore.getState().addLog(`[${time}] SYS//REQ > [${method}] ${url}`);
+    if (typeof window !== 'undefined' && shouldLogRequest(method, url)) {
+      useTerminalStore.getState().addLog(`[${time}] REQ ${method} ${url} body=${byteSize(config.data)}B`);
     }
     
     return config;
@@ -40,9 +59,10 @@ api.interceptors.response.use(
     const duration = new Date().getTime() - (config.metadata?.startTime?.getTime() || new Date().getTime());
     const method = config.method?.toUpperCase() || 'GET';
     const time = new Date().toLocaleTimeString('en-GB');
+    const url = config.url || '';
     
-    if (typeof window !== 'undefined') {
-      useTerminalStore.getState().addLog(`[${time}] SYS//RES > [200 OK] (${duration}ms) ${config.url}`);
+    if (typeof window !== 'undefined' && (shouldLogRequest(method, url) || (!isQuietPollingRequest(method, url) && duration > 1000))) {
+      useTerminalStore.getState().addLog(`[${time}] RES ${method} ${url} -> ${response.status} (${duration}ms)`);
     }
     
     return response;
@@ -56,9 +76,9 @@ api.interceptors.response.use(
     
     if (typeof window !== 'undefined') {
       if (config) {
-          useTerminalStore.getState().addLog(`[${time}] SYS//ERR > [${status}] (${duration}ms) ${config.url} -> ${msg}`);
+          useTerminalStore.getState().addLog(`[${time}] ERR ${config.method?.toUpperCase() || 'REQ'} ${config.url} -> ${status} (${duration}ms) ${msg}`);
       } else {
-          useTerminalStore.getState().addLog(`[${time}] SYS//ERR > ${msg}`);
+          useTerminalStore.getState().addLog(`[${time}] ERR ${msg}`);
       }
     }
 
