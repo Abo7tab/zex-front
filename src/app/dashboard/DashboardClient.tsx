@@ -374,7 +374,24 @@ export default function DashboardClient() {
   };
 
   const handleTogglePowerSaver = async () => { if (!device) return; setActionLoading(true); try { await togglePowerSaver(device.id, !isPowerSaver); setDevice((p:any)=>({...p,is_power_saver:!isPowerSaver})); setRtState((p:any)=>p?{...p,is_power_saver:!isPowerSaver}:null); optimisticPing(); await fetchDevicesInner(); } catch (err: any) { alert("Failed to toggle power saver: " + (err.response?.data?.message || err.message || "Server Error")); } finally { setActionLoading(false); } };
-    const handleLocate       = useCallback(async () => { if (!device) return; try { await locateDevice(device.id); optimisticPing(); } catch { alert('Failed to execute GPS Locate'); } }, [device?.id]);
+    const handleLocate       = useCallback(async () => {
+      if (!device) return;
+      setActionLoading(true);
+      try {
+        await locateDevice(device.id);
+        optimisticPing();
+        await fetchDevicesInner();
+        [3000, 8000, 15000].forEach((delay) => {
+          window.setTimeout(() => {
+            if (document.visibilityState === 'visible') fetchDevicesInner();
+          }, delay);
+        });
+      } catch {
+        alert('Failed to execute GPS Locate');
+      } finally {
+        setActionLoading(false);
+      }
+    }, [device?.id]);
   const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to execute Scream Alert'); } };
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
   const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Invalid Password'); } finally { setActionLoading(false); } };
