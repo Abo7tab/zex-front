@@ -26,7 +26,21 @@ const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
 });
 
 const IMPORTANT_ACTIVITY_PATTERN = /(command|locate|location|gps|ble|sms|relay|offline|scream|siren|stolen|found|lock|track|power|photo|network|error|fail|proximity)/i;
-const NOISY_CLIENT_LOG_PATTERN = /(?:SYS\/\/(?:REQ|RES).*(?:\/logs|\/devices)|\b(?:REQ|RES)\s+GET\s+\/(?:logs|devices)\b)/i;
+const NOISY_CLIENT_LOG_PATTERN = /(?:SYS\/\/(?:REQ|RES).*(?:\/logs|\/devices|\/auth\/me)|\b(?:REQ|RES)\s+GET\s+\/(?:logs|devices|auth\/me)\b)/i;
+const commandLabels: Record<string, string> = {
+  LOCATE: 'طلب تحديد الموقع',
+  CONTINUOUS_TRACK: 'تشغيل التتبع المستمر',
+  STOP_TRACKING: 'إيقاف التتبع',
+  STOP_SEARCH: 'إيقاف البحث',
+  SCREAM: 'تشغيل الإنذار',
+  STOP_SCREAM: 'إيقاف الإنذار',
+  LOCK: 'قفل الجهاز',
+  ENABLE_NET: 'تشغيل الشبكة',
+  STOLEN_MODE: 'وضع السرقة',
+  FOUND_MODE: 'تم العثور على الجهاز',
+  POWER_SAVER_ON: 'تشغيل توفير الطاقة',
+  POWER_SAVER_OFF: 'إيقاف توفير الطاقة',
+};
 
 const asObject = (value: unknown): Record<string, unknown> => (
   value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
@@ -57,6 +71,10 @@ const formatActivityTime = (timestamp: unknown) => {
 };
 
 const isImportantActivity = (entry: any) => {
+  if (String(entry?.action || '').toUpperCase() === 'BLE_PROXIMITY_UPDATE') {
+    return false;
+  }
+
   const payload = asObject(entry?.payload);
   const metadata = asObject(entry?.metadata);
   const haystack = [
@@ -112,23 +130,32 @@ const formatActivityLine = (entry: any) => {
   const time = formatActivityTime(entry?.timestamp || entry?.created_at);
 
   if (command || action.includes('COMMAND')) {
-    const parts = [`[${time}] SERVER CMD`, command || action, `device=${deviceName}`];
-    if (status) parts.push(`status=${status}`);
-    if (targetName) parts.push(`target=${targetName}`);
-    parts.push(`msg="${message}"`);
+    const commandName = (command || action).toUpperCase();
+    const label = commandLabels[commandName] || commandName;
+    const state = action.includes('QUEUED')
+      ? 'اتسجل'
+      : action.includes('SENT')
+        ? 'اترسل للموبايل'
+        : status.toUpperCase() === 'FAILED'
+          ? 'فشل'
+          : status.toUpperCase() === 'EXECUTED'
+            ? 'اتنفذ'
+            : 'اتحدث';
+    const parts = [`[${time}] ${deviceName}: ${label} ${state}`];
+    if (targetName) parts.push(`لـ ${targetName}`);
+    if (status && !['EXECUTED', 'FAILED'].includes(status.toUpperCase())) parts.push(`(${status})`);
     return parts.join(' ');
   }
 
   if (/(BLE|SMS|OFFLINE|RELAY|PROXIMITY|LOCATION|GPS)/i.test(`${source} ${action} ${message}`)) {
-    const parts = [`[${time}] OFFLINE`, source.includes('BLE') ? 'BLE' : source.includes('SMS') ? 'SMS' : action, deviceName];
-    if (targetName) parts.push(`-> ${targetName}`);
-    if (lat != null && lng != null) parts.push(`@ ${compactCoordinate(lat)},${compactCoordinate(lng)}`);
-    if (distance != null) parts.push(`range=${distance.toFixed(1)}m`);
-    parts.push(`msg="${message}"`);
+    const channel = source.includes('BLE') ? 'بالبلوتوث' : source.includes('SMS') ? 'برسالة SMS' : 'Offline';
+    const parts = [`[${time}] ${deviceName} لقط موقع ${targetName || 'الجهاز'} ${channel}`];
+    if (lat != null && lng != null) parts.push(`${compactCoordinate(lat)}, ${compactCoordinate(lng)}`);
+    if (distance != null) parts.push(`المسافة ${distance.toFixed(1)}م`);
     return parts.join(' ');
   }
 
-  return `[${time}] SERVER ${action} device=${deviceName} msg="${message}"`;
+  return `[${time}] ${deviceName}: ${message}`;
 };
 
 const terminalLineClass = (line: string) => {
@@ -198,8 +225,9 @@ export default function DashboardClient() {
       .slice(0, 30);
   }, [serverActivity]);
   const logs = useMemo(() => {
-    const clientLogs = allLogs.filter((log) => !NOISY_CLIENT_LOG_PATTERN.test(log));
-    return [...clientLogs, ...activityLines].slice(0, 80);
+    const clientLogs = allLogs.filter((log) => !NOISY_CLIENT_LOG_PATTERN.test(log)).slice(0, 50).reverse();
+    const serverLogs = activityLines.slice(0, 30).reverse();
+    return [...serverLogs, ...clientLogs].slice(-80);
   }, [activityLines, allLogs]);
   const router = useRouter();
 

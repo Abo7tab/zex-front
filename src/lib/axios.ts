@@ -11,7 +11,7 @@ const api = axios.create({
 });
 
 const importantRequestPattern = /\/(commands|locate|scream|stop-scream|track|stop-tracking|lock|photo|enable-net|stolen|found|power-saver|search-mode|stop-search|activity-logs|locations)/i;
-const quietPollingPattern = /^\/(?:logs|devices)(?:\?|$)/i;
+const quietPollingPattern = /^\/(?:logs|devices|auth\/me)(?:\?|$)/i;
 
 const shouldLogRequest = (method: string, url: string) => {
   if (method !== 'GET') return true;
@@ -27,6 +27,26 @@ const byteSize = (value: unknown) => {
   } catch {
     return 0;
   }
+};
+
+const describeRequest = (method: string, url: string, size: number) => {
+  const locateMatch = url.match(/\/devices\/([^/]+)\/locate/i);
+  if (locateMatch && method === 'POST') return `تم إرسال طلب تحديد موقع للجهاز رقم ${locateMatch[1]} (${size}B)`;
+  if (/\/locations$/i.test(url) && method === 'POST') return `الموبايل بعت إحداثيات GPS جديدة (${size}B)`;
+  if (/\/locations\/ble-relay$/i.test(url) && method === 'POST') return `تم استلام موقع عن طريق البلوتوث (${size}B)`;
+  if (/\/locations\/sms-relay$/i.test(url) && method === 'POST') return `تم استلام موقع عن طريق SMS (${size}B)`;
+  if (/\/commands\/[^/]+\/response$/i.test(url) && method === 'POST') return `الموبايل رد على أمر من السيرفر (${size}B)`;
+  return `${method} ${url} body=${size}B`;
+};
+
+const describeResponse = (method: string, url: string, status: number, duration: number) => {
+  const locateMatch = url.match(/\/devices\/([^/]+)\/locate/i);
+  if (locateMatch && method === 'POST') return `السيرفر قبل طلب تحديد موقع الجهاز رقم ${locateMatch[1]} (${duration}ms)`;
+  if (/\/locations$/i.test(url) && method === 'POST') return `السيرفر حفظ/حدّث موقع GPS (${duration}ms)`;
+  if (/\/locations\/ble-relay$/i.test(url) && method === 'POST') return `السيرفر حفظ موقع البلوتوث (${duration}ms)`;
+  if (/\/locations\/sms-relay$/i.test(url) && method === 'POST') return `السيرفر حفظ موقع SMS (${duration}ms)`;
+  if (/\/commands\/[^/]+\/response$/i.test(url) && method === 'POST') return `السيرفر استلم رد الموبايل على الأمر (${duration}ms)`;
+  return `${method} ${url} -> ${status} (${duration}ms)`;
 };
 
 api.interceptors.request.use(
@@ -45,7 +65,7 @@ api.interceptors.request.use(
     const time = new Date().toLocaleTimeString('en-GB');
     
     if (typeof window !== 'undefined' && shouldLogRequest(method, url)) {
-      useTerminalStore.getState().addLog(`[${time}] REQ ${method} ${url} body=${byteSize(config.data)}B`);
+      useTerminalStore.getState().addLog(`[${time}] ${describeRequest(method, url, byteSize(config.data))}`);
     }
     
     return config;
@@ -62,7 +82,7 @@ api.interceptors.response.use(
     const url = config.url || '';
     
     if (typeof window !== 'undefined' && (shouldLogRequest(method, url) || (!isQuietPollingRequest(method, url) && duration > 1000))) {
-      useTerminalStore.getState().addLog(`[${time}] RES ${method} ${url} -> ${response.status} (${duration}ms)`);
+      useTerminalStore.getState().addLog(`[${time}] ${describeResponse(method, url, response.status, duration)}`);
     }
     
     return response;
