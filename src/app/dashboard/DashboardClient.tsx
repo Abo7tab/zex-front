@@ -354,21 +354,40 @@ export default function DashboardClient() {
     }
   }, [logs]);
 
+  const clearNotifications = useCallback(() => {
+    const visibleIds = serverActivity
+      .map(activityNotification)
+      .filter((item): item is DashboardNotification => Boolean(item))
+      .map((item) => item.id);
+    setNotifications([]);
+    seenActivityNotifications.current = new Set(visibleIds);
+    try {
+      sessionStorage.removeItem(NOTIFICATION_STORAGE_KEY);
+    } catch {
+      // Nothing to clear.
+    }
+  }, [serverActivity]);
+
   const clearDebugLogs = useCallback(async () => {
     setClearingLogs(true);
     try {
-      if (serverActivity.length > 0) {
-        await api.delete('/logs');
-      }
+      await api.delete('/logs');
       setServerActivity([]);
       clearLogs();
+      setPendingLocates({});
+      clearNotifications();
+      setLocationNotice(null);
     } catch {
       clearLogs();
-      alert('Cleared local logs, but failed to clear server logs');
+      setServerActivity([]);
+      setPendingLocates({});
+      clearNotifications();
+      setLocationNotice(null);
+      alert('Cleared local logs, but failed to reach server.');
     } finally {
       setClearingLogs(false);
     }
-  }, [clearLogs, serverActivity.length]);
+  }, [clearLogs, clearNotifications]);
 
   useEffect(() => {
     const loadServerActivity = async () => {
@@ -438,19 +457,6 @@ export default function DashboardClient() {
     setNotifications((current) => current.map((item) => ({ ...item, read: true })));
   };
 
-  const clearNotifications = () => {
-    const visibleIds = serverActivity
-      .map(activityNotification)
-      .filter((item): item is DashboardNotification => Boolean(item))
-      .map((item) => item.id);
-    setNotifications([]);
-    seenActivityNotifications.current = new Set(visibleIds);
-    try {
-      sessionStorage.removeItem(NOTIFICATION_STORAGE_KEY);
-    } catch {
-      // Nothing to clear.
-    }
-  };
 
   const pushSessionNotification = useCallback((notification: DashboardNotification) => {
     if (seenActivityNotifications.current.has(notification.id)) return;
