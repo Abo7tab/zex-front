@@ -71,12 +71,23 @@ const formatActivityTime = (timestamp: unknown) => {
 };
 
 const isImportantActivity = (entry: any) => {
-  if (String(entry?.action || '').toUpperCase() === 'BLE_PROXIMITY_UPDATE') {
+  const payload = asObject(entry?.payload);
+  const metadata = asObject(entry?.metadata);
+  const action = String(entry?.action || '').toUpperCase();
+  const message = String(entry?.message || '').toUpperCase();
+  const source = String(payload.source || payload.transport || '').toUpperCase();
+
+  if (
+    action === 'BLE_PROXIMITY_UPDATE'
+    || source.includes('BLE')
+    || source.includes('SMS')
+    || message.includes('BLE PEER')
+    || message.includes('LOCATION RELAYED')
+    || message.includes('SMS LOCATION')
+  ) {
     return false;
   }
 
-  const payload = asObject(entry?.payload);
-  const metadata = asObject(entry?.metadata);
   const haystack = [
     entry?.action,
     entry?.message,
@@ -210,6 +221,7 @@ export default function DashboardClient() {
   const allLogs = useTerminalStore((state) => state.logs);
   const clearLogs = useTerminalStore((state) => state.clearLogs);
   const [terminalCopied, setTerminalCopied] = useState(false);
+  const [clearingLogs, setClearingLogs] = useState(false);
   const activityLines = useMemo(() => {
     const seen = new Set<string>();
 
@@ -241,6 +253,23 @@ export default function DashboardClient() {
       alert('Failed to copy debug logs');
     }
   }, [logs]);
+
+  const clearDebugLogs = useCallback(async () => {
+    setClearingLogs(true);
+    try {
+      if (serverActivity.length > 0) {
+        await api.delete('/logs');
+      }
+      setServerActivity([]);
+      setSelectedActivityIds([]);
+      clearLogs();
+    } catch {
+      clearLogs();
+      alert('Cleared local logs, but failed to clear server logs');
+    } finally {
+      setClearingLogs(false);
+    }
+  }, [clearLogs, serverActivity.length]);
 
   const offlineActivities = useMemo(() => serverActivity.filter((entry: any) => {
     const payload = entry?.payload || {};
@@ -685,51 +714,6 @@ export default function DashboardClient() {
                 ))}
               </div>
 
-              {/* ── Offline operations timeline ── */}
-              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 border border-slate-200/80 shadow-sm">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div className="flex items-center gap-2">
-                    <Bluetooth className="w-4 h-4 text-indigo-600" />
-                    <div>
-                      <h2 className="text-sm font-extrabold text-slate-800">Offline Search Activity</h2>
-                      <p className="text-[10px] text-slate-500">SMS and BLE discoveries for the selected target</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => deleteActivityLogs(selectedActivityIds)} disabled={selectedActivityIds.length === 0} className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-rose-100"><Trash2 className="w-3 h-3" /> Delete ({selectedActivityIds.length})</button>
-                    <button onClick={() => router.push('/logs')} className="text-[10px] font-bold text-blue-600 hover:text-blue-800">View all</button>
-                  </div>
-                </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {offlineActivities.slice(0, activityVisibleCount).map((entry: any, index: number) => {
-                    const payload = entry?.payload || {};
-                    const source = String(payload.source || entry.action || 'activity');
-                    return (
-                      <div key={`${entry.id || 'event'}-${index}`} className="flex items-start gap-2 rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
-                        <input type="checkbox" aria-label={`Select activity ${entry.id || index}`} checked={selectedActivityIds.includes(Number(entry.id))} onChange={() => setSelectedActivityIds(current => current.includes(Number(entry.id)) ? current.filter(id => id !== Number(entry.id)) : [...current, Number(entry.id)])} className="mt-1 accent-blue-600" />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-700">
-                            <span className={`h-1.5 w-1.5 rounded-full ${source.includes('BLE') ? 'bg-indigo-500' : 'bg-emerald-500'}`} />
-                            {source}
-                          </div>
-                          <p className="text-[11px] text-slate-600 truncate">{entry.message || 'Offline event received'}</p>
-                          {payload.lat && payload.lng && (
-                            <a href={`https://www.google.com/maps?q=${payload.lat},${payload.lng}`} target="_blank" rel="noreferrer" className="inline-block font-mono text-[10px] text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded mt-1 mb-0.5">
-                              📍 {payload.lat}, {payload.lng}
-                            </a>
-                          )}
-                          {payload.distance_meters && <p className="font-mono text-[10px] text-cyan-600">Range {Number(payload.distance_meters).toFixed(1)}m · {payload.proximity || 'SEARCHING'}</p>}
-                          {entry.metadata && <p className="font-mono text-[9px] text-slate-400">{Object.entries(entry.metadata).filter(([key]) => key.endsWith('_at')).map(([key, value]) => `${key.replace('_at', '')}: ${new Date(String(value)).toLocaleTimeString('en-GB')}`).join(' • ')}</p>}
-                        </div>
-                        <span className="shrink-0 text-[9px] text-slate-400">{entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString('en-GB') : '--'}</span>
-                      </div>
-                    );
-                  })}
-                  {offlineActivities.length === 0 && <p className="py-5 text-center text-xs text-slate-400">Waiting for SMS or BLE discovery events...</p>}
-                  {activityVisibleCount < offlineActivities.length && <button onClick={() => setActivityVisibleCount(current => current + 5)} className="w-full rounded-lg border border-slate-200 py-2 text-[10px] font-bold text-blue-600 hover:bg-blue-50">Show more activity</button>}
-                </div>
-              </div>
-
               {/* ── Terminal Log ── */}
               <div className="bg-slate-950 rounded-2xl sm:rounded-3xl p-4 shadow-xl border border-slate-800 text-slate-300 font-mono text-xs h-56 sm:h-64 flex flex-col relative overflow-hidden mb-2">
                 <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 via-emerald-400 to-transparent opacity-60" />
@@ -738,7 +722,7 @@ export default function DashboardClient() {
                     <Terminal className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                     <span className="font-bold text-[10px] text-slate-100 uppercase tracking-widest">Debug Stream</span>
                     <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-200">
-                      important only
+                      commands only
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -753,12 +737,12 @@ export default function DashboardClient() {
                     </button>
                     <button
                       type="button"
-                      onClick={clearLogs}
-                      disabled={!allLogs.length}
+                      onClick={clearDebugLogs}
+                      disabled={clearingLogs || (!allLogs.length && !serverActivity.length)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-[10px] font-bold text-slate-200 transition hover:border-rose-500 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Trash2 className="h-3 w-3" />
-                      Clear
+                      {clearingLogs ? 'Clearing' : 'Clear'}
                     </button>
                     <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   </div>

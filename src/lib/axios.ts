@@ -32,6 +32,16 @@ const byteSize = (value: unknown) => {
 const describeRequest = (method: string, url: string, size: number) => {
   const locateMatch = url.match(/\/devices\/([^/]+)\/locate/i);
   if (locateMatch && method === 'POST') return `تم إرسال طلب تحديد موقع للجهاز رقم ${locateMatch[1]} (${size}B)`;
+  const screamMatch = url.match(/\/devices\/([^/]+)\/scream/i);
+  if (screamMatch && method === 'POST') return `تم إرسال طلب تشغيل الرنين للجهاز رقم ${screamMatch[1]} (${size}B)`;
+  const stopScreamMatch = url.match(/\/devices\/([^/]+)\/stop-scream/i);
+  if (stopScreamMatch && method === 'POST') return `تم إرسال طلب إيقاف الرنين للجهاز رقم ${stopScreamMatch[1]} (${size}B)`;
+  const powerSaverMatch = url.match(/\/devices\/([^/]+)\/power-saver/i);
+  if (powerSaverMatch && method === 'POST') return `تم إرسال طلب تعديل توفير الطاقة للجهاز رقم ${powerSaverMatch[1]} (${size}B)`;
+  const searchModeMatch = url.match(/\/devices\/([^/]+)\/search-mode/i);
+  if (searchModeMatch && method === 'POST') return `تم إرسال طلب تشغيل البحث للجهاز رقم ${searchModeMatch[1]} (${size}B)`;
+  const stopSearchMatch = url.match(/\/devices\/([^/]+)\/stop-search/i);
+  if (stopSearchMatch && method === 'POST') return `تم إرسال طلب إيقاف البحث للجهاز رقم ${stopSearchMatch[1]} (${size}B)`;
   if (/\/locations$/i.test(url) && method === 'POST') return `الموبايل بعت إحداثيات GPS جديدة (${size}B)`;
   if (/\/locations\/ble-relay$/i.test(url) && method === 'POST') return `تم استلام موقع عن طريق البلوتوث (${size}B)`;
   if (/\/locations\/sms-relay$/i.test(url) && method === 'POST') return `تم استلام موقع عن طريق SMS (${size}B)`;
@@ -42,6 +52,16 @@ const describeRequest = (method: string, url: string, size: number) => {
 const describeResponse = (method: string, url: string, status: number, duration: number) => {
   const locateMatch = url.match(/\/devices\/([^/]+)\/locate/i);
   if (locateMatch && method === 'POST') return `السيرفر قبل طلب تحديد موقع الجهاز رقم ${locateMatch[1]} (${duration}ms)`;
+  const screamMatch = url.match(/\/devices\/([^/]+)\/scream/i);
+  if (screamMatch && method === 'POST') return `السيرفر قبل طلب تشغيل الرنين للجهاز رقم ${screamMatch[1]} (${duration}ms)`;
+  const stopScreamMatch = url.match(/\/devices\/([^/]+)\/stop-scream/i);
+  if (stopScreamMatch && method === 'POST') return `السيرفر قبل طلب إيقاف الرنين للجهاز رقم ${stopScreamMatch[1]} (${duration}ms)`;
+  const powerSaverMatch = url.match(/\/devices\/([^/]+)\/power-saver/i);
+  if (powerSaverMatch && method === 'POST') return `السيرفر قبل طلب توفير الطاقة للجهاز رقم ${powerSaverMatch[1]} (${duration}ms)`;
+  const searchModeMatch = url.match(/\/devices\/([^/]+)\/search-mode/i);
+  if (searchModeMatch && method === 'POST') return `السيرفر قبل طلب تشغيل البحث للجهاز رقم ${searchModeMatch[1]} (${duration}ms)`;
+  const stopSearchMatch = url.match(/\/devices\/([^/]+)\/stop-search/i);
+  if (stopSearchMatch && method === 'POST') return `السيرفر قبل طلب إيقاف البحث للجهاز رقم ${stopSearchMatch[1]} (${duration}ms)`;
   if (/\/locations$/i.test(url) && method === 'POST') return `السيرفر حفظ/حدّث موقع GPS (${duration}ms)`;
   if (/\/locations\/ble-relay$/i.test(url) && method === 'POST') return `السيرفر حفظ موقع البلوتوث (${duration}ms)`;
   if (/\/locations\/sms-relay$/i.test(url) && method === 'POST') return `السيرفر حفظ موقع SMS (${duration}ms)`;
