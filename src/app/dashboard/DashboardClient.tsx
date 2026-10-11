@@ -75,17 +75,9 @@ const isImportantActivity = (entry: any) => {
   const payload = asObject(entry?.payload);
   const metadata = asObject(entry?.metadata);
   const action = String(entry?.action || '').toUpperCase();
-  const message = String(entry?.message || '').toUpperCase();
-  const source = String(payload.source || payload.transport || '').toUpperCase();
 
-  if (
-    action === 'BLE_PROXIMITY_UPDATE'
-    || source.includes('BLE')
-    || source.includes('SMS')
-    || message.includes('BLE PEER')
-    || message.includes('LOCATION RELAYED')
-    || message.includes('SMS LOCATION')
-  ) {
+  // Only suppress high-frequency raw beacon proximity updates
+  if (action === 'BLE_PROXIMITY_UPDATE') {
     return false;
   }
 
@@ -98,7 +90,9 @@ const isImportantActivity = (entry: any) => {
     payload.transport,
     payload.proximity,
     payload.command,
+    payload.command_type,
     metadata.command,
+    metadata.command_type,
     metadata.status,
   ].map((value) => String(value || '')).join(' ');
 
@@ -204,6 +198,7 @@ type DashboardNotification = {
   title: string;
   detail: string;
   deviceName: string;
+  deviceId?: number | string;
   createdAt: string;
   read: boolean;
 };
@@ -215,16 +210,17 @@ const activityNotification = (entry: any): DashboardNotification | null => {
   const command = firstText(payload.command, payload.command_type, metadata.command, metadata.command_type);
   const commandName = command ? (commandLabels[command.toUpperCase()] || command.toUpperCase()) : '';
   const deviceName = firstText(entry?.device_name, payload.device_name, payload.source_uid, 'device');
+  const deviceId = entry?.device_id || payload.device_id || metadata.device_id;
   const createdAt = String(entry?.timestamp || entry?.created_at || new Date().toISOString());
   const id = String(entry?.id || `${action}:${deviceName}:${createdAt}:${command}`);
   const line = formatActivityLine(entry).replace(/^\[[^\]]+\]\s*/, '');
 
   if (action === 'LOCATION_RECEIVED') {
-    return { id, tone: 'success', title: `وصل موقع ${deviceName}`, detail: line, deviceName, createdAt, read: false };
+    return { id, tone: 'success', title: `وصل موقع ${deviceName}`, detail: line, deviceName, deviceId, createdAt, read: false };
   }
 
   if (action === 'COMMAND_SENT') {
-    return { id, tone: 'info', title: `${deviceName} استلم الأمر`, detail: commandName || line, deviceName, createdAt, read: false };
+    return { id, tone: 'info', title: `${deviceName} استلم الأمر`, detail: commandName || line, deviceName, deviceId, createdAt, read: false };
   }
 
   if (action === 'COMMAND_RESPONSE') {
@@ -236,29 +232,30 @@ const activityNotification = (entry: any): DashboardNotification | null => {
       title: failed ? `${deviceName} فشل في تنفيذ الأمر` : `${deviceName} نفذ الأمر`,
       detail: commandName || line,
       deviceName,
+      deviceId,
       createdAt,
       read: false,
     };
   }
 
   if (action === 'COMMAND_WAITING') {
-    return { id, tone: 'warning', title: `${deviceName} لسه مستلمش الأمر`, detail: commandName || line, deviceName, createdAt, read: false };
+    return { id, tone: 'warning', title: `${deviceName} لسه مستلمش الأمر`, detail: commandName || line, deviceName, deviceId, createdAt, read: false };
   }
 
   if (action === 'COMMAND_TIMEOUT') {
-    return { id, tone: 'danger', title: `${deviceName} مردش على الأمر`, detail: commandName || line, deviceName, createdAt, read: false };
+    return { id, tone: 'danger', title: `${deviceName} مردش على الأمر`, detail: commandName || line, deviceName, deviceId, createdAt, read: false };
   }
 
   if (action.includes('STOLEN')) {
-    return { id, tone: 'danger', title: `${deviceName} وضع السرقة اتفعل`, detail: line, deviceName, createdAt, read: false };
+    return { id, tone: 'danger', title: `${deviceName} وضع السرقة اتفعل`, detail: line, deviceName, deviceId, createdAt, read: false };
   }
 
   if (action.includes('FOUND')) {
-    return { id, tone: 'success', title: `${deviceName} خرج من وضع السرقة`, detail: line, deviceName, createdAt, read: false };
+    return { id, tone: 'success', title: `${deviceName} خرج من وضع السرقة`, detail: line, deviceName, deviceId, createdAt, read: false };
   }
 
   if (/INSTALL|REGISTER/i.test(`${action} ${entry?.message || ''}`)) {
-    return { id, tone: 'info', title: `${deviceName} اتسجل على النظام`, detail: line, deviceName, createdAt, read: false };
+    return { id, tone: 'info', title: `${deviceName} اتسجل على النظام`, detail: line, deviceName, deviceId, createdAt, read: false };
   }
 
   return null;
@@ -268,11 +265,14 @@ export default function DashboardClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [now, setNow] = useState(Date.now());
+  const [pendingLocates, setPendingLocates] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 10000);
+    const isAnyPending = Object.keys(pendingLocates).length > 0;
+    const intervalMs = isAnyPending ? 1000 : 10000;
+    const timer = setInterval(() => setNow(Date.now()), intervalMs);
     return () => clearInterval(timer);
-  }, []);
+  }, [pendingLocates]);
 
   function isDeviceOnline(d: any): boolean {
     if (!d) return false;
@@ -301,7 +301,6 @@ export default function DashboardClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [serverActivity, setServerActivity] = useState<any[]>([]);
-  const [pendingLocate, setPendingLocate] = useState<{ deviceId: number | string; requestedAt: number } | null>(null);
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -331,7 +330,16 @@ export default function DashboardClient() {
   const logs = useMemo(() => {
     const clientLogs = allLogs.filter((log) => !NOISY_CLIENT_LOG_PATTERN.test(log)).slice(0, 50).reverse();
     const serverLogs = activityLines.slice(0, 30).reverse();
-    return [...serverLogs, ...clientLogs].slice(-80);
+    const merged = [...serverLogs, ...clientLogs];
+    const seen = new Set<string>();
+    const dedupe: string[] = [];
+    for (const item of merged) {
+      if (!seen.has(item)) {
+        seen.add(item);
+        dedupe.push(item);
+      }
+    }
+    return dedupe.slice(-80);
   }, [activityLines, allLogs]);
   const router = useRouter();
 
@@ -498,17 +506,24 @@ export default function DashboardClient() {
   }, [latitude, longitude]);
 
   useEffect(() => {
-    if (!pendingLocate || !device || String(pendingLocate.deviceId) !== String(device.id)) return;
+    if (!device) return;
+    const devIdStr = String(device.id);
+    const requestedAt = pendingLocates[devIdStr];
+    if (!requestedAt) return;
     if (!latitude || !longitude) return;
 
     const recordedTime = locationRecordedAt ? new Date(String(locationRecordedAt)).getTime() : Date.now();
-    if (Number.isFinite(recordedTime) && recordedTime + 5000 < pendingLocate.requestedAt) return;
+    if (Number.isFinite(recordedTime) && recordedTime + 10000 < requestedAt) return;
 
     const key = `${device.id}:${locationRecordedAt || `${latitude},${longitude}`}`;
     if (lastLocationNoticeKey.current === key) return;
 
     lastLocationNoticeKey.current = key;
-    setPendingLocate(null);
+    setPendingLocates((prev) => {
+      const next = { ...prev };
+      delete next[devIdStr];
+      return next;
+    });
     const deviceName = getTacticalName(device);
     const receivedAt = new Date().toISOString();
     const coordinateText = `${compactCoordinate(latitude)}, ${compactCoordinate(longitude)}`;
@@ -520,30 +535,95 @@ export default function DashboardClient() {
       title: `وصل موقع ${deviceName}`,
       detail,
       deviceName,
+      deviceId: device.id,
       createdAt: receivedAt,
       read: false,
     });
     addLog(`[${formatActivityTime(receivedAt)}] ${detail}`);
-    window.setTimeout(() => setLocationNotice(null), 5000);
-  }, [accuracy, addLog, device, latitude, longitude, locationRecordedAt, pendingLocate, pushSessionNotification]);
+    window.setTimeout(() => setLocationNotice(null), 6000);
+  }, [accuracy, addLog, device, latitude, longitude, locationRecordedAt, pendingLocates, pushSessionNotification]);
 
   useEffect(() => {
-    const locationEntry = serverActivity.find((entry: any) => String(entry?.action || '').toUpperCase() === 'LOCATION_RECEIVED');
-    if (!pendingLocate || !locationEntry || !device) return;
-    if (locationEntry.device_id && String(locationEntry.device_id) !== String(device.id)) return;
-    if (!locationEntry.device_id && String(locationEntry.device_name || '') && String(locationEntry.device_name) !== String(device.device_name || '')) return;
+    if (!serverActivity.length) return;
+    const pendingKeys = Object.keys(pendingLocates);
+    if (!pendingKeys.length) return;
 
-    const eventTime = new Date(String(locationEntry.timestamp || '')).getTime();
-    if (Number.isFinite(eventTime) && eventTime + 5000 < pendingLocate.requestedAt) return;
+    for (const entry of serverActivity) {
+      const action = String(entry?.action || '').toUpperCase();
+      const payload = asObject(entry?.payload);
+      const metadata = asObject(entry?.metadata);
+      const cmd = firstText(payload.command, payload.command_type, metadata.command, metadata.command_type).toUpperCase();
+      const status = firstText(metadata.status, payload.status).toUpperCase();
 
-    const key = `${locationEntry.id || locationEntry.timestamp}`;
-    if (lastLocationNoticeKey.current === key) return;
+      const isLocationReceived = action === 'LOCATION_RECEIVED';
+      const isLocateExecuted = (action === 'COMMAND_RESPONSE' || action === 'COMMAND_EXECUTED') && cmd === 'LOCATE' && status === 'EXECUTED';
 
-    lastLocationNoticeKey.current = key;
-    setPendingLocate(null);
-    setLocationNotice(`وصل موقع ${getTacticalName(device)} الآن`);
-    window.setTimeout(() => setLocationNotice(null), 5000);
-  }, [device, pendingLocate, serverActivity]);
+      if (!isLocationReceived && !isLocateExecuted) continue;
+
+      let matchedDevId: string | null = null;
+      for (const id of pendingKeys) {
+        if (entry.device_id && String(entry.device_id) === String(id)) {
+          matchedDevId = id;
+          break;
+        }
+      }
+      if (!matchedDevId && entry.device_name) {
+        const found = devices.find(d => getTacticalName(d) === String(entry.device_name) || String(d.name) === String(entry.device_name));
+        if (found && pendingKeys.includes(String(found.id))) {
+          matchedDevId = String(found.id);
+        }
+      }
+
+      if (!matchedDevId) continue;
+
+      const requestedAt = pendingLocates[matchedDevId];
+      if (!requestedAt) continue;
+
+      const eventTime = new Date(String(entry.timestamp || entry.created_at || '')).getTime();
+      if (Number.isFinite(eventTime) && eventTime + 10000 < requestedAt) {
+        continue;
+      }
+
+      const key = `server-loc-${matchedDevId}-${entry.id || entry.timestamp || entry.created_at}`;
+      if (lastLocationNoticeKey.current === key) continue;
+      lastLocationNoticeKey.current = key;
+
+      setPendingLocates((prev) => {
+        const next = { ...prev };
+        delete next[matchedDevId!];
+        return next;
+      });
+
+      const matchedDev = devices.find((d: any) => String(d.id) === String(matchedDevId));
+      const devName = matchedDev ? getTacticalName(matchedDev) : (entry.device_name || `جهاز #${matchedDevId}`);
+      const noticeMsg = `وصل موقع ${devName} الآن`;
+      setLocationNotice(noticeMsg);
+      window.setTimeout(() => setLocationNotice(null), 6000);
+
+      const timeStr = formatActivityTime(entry.timestamp || entry.created_at || new Date().toISOString());
+      const lat = firstNumber(payload.lat, payload.latitude, metadata.lat, metadata.latitude);
+      const lng = firstNumber(payload.lng, payload.longitude, metadata.lng, metadata.longitude);
+      const coords = (lat != null && lng != null) ? ` (${compactCoordinate(lat)}, ${compactCoordinate(lng)})` : '';
+      const detail = `${devName}: وصل موقع جديد${coords}`;
+
+      pushSessionNotification({
+        id: key,
+        tone: 'success',
+        title: `وصل موقع ${devName}`,
+        detail,
+        deviceName: devName,
+        deviceId: matchedDevId,
+        createdAt: new Date().toISOString(),
+        read: false,
+      });
+
+      addLog(`[${timeStr}] ${detail}`);
+
+      if (device && String(device.id) === String(matchedDevId)) {
+        fetchDevicesInner();
+      }
+    }
+  }, [serverActivity, pendingLocates, devices, device, addLog, pushSessionNotification]);
 
   const isScreaming  = statusObj.is_screaming  ?? device?.is_screaming;
   const isStolen     = statusObj.is_stolen     ?? device?.is_stolen;
@@ -598,26 +678,56 @@ export default function DashboardClient() {
   };
 
   const handleTogglePowerSaver = async () => { if (!device) return; setActionLoading(true); try { await togglePowerSaver(device.id, !isPowerSaver); setDevice((p:any)=>({...p,is_power_saver:!isPowerSaver})); setRtState((p:any)=>p?{...p,is_power_saver:!isPowerSaver}:null); optimisticPing(); await fetchDevicesInner(); } catch (err: any) { alert("Failed to toggle power saver: " + (err.response?.data?.message || err.message || "Server Error")); } finally { setActionLoading(false); } };
-    const handleLocate       = useCallback(async () => {
-      if (!device) return;
-      setActionLoading(true);
-      try {
-        setPendingLocate({ deviceId: device.id, requestedAt: Date.now() });
-        await locateDevice(device.id);
-        optimisticPing();
-        await fetchDevicesInner();
-        [3000, 8000, 15000].forEach((delay) => {
-          window.setTimeout(() => {
-            if (document.visibilityState === 'visible') fetchDevicesInner();
-          }, delay);
-        });
-      } catch {
-        alert('Failed to execute GPS Locate');
-      } finally {
-        setActionLoading(false);
-      }
-    }, [device?.id]);
-  const handleStartScream  = async () => { if (!device) return; try { await screamDevice(device.id); setDevice((p:any)=>({...p,is_screaming:true})); setRtState((p:any)=>p?{...p,is_screaming:true}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to execute Scream Alert'); } };
+  const isCurrentDevicePending = Boolean(device && pendingLocates[String(device.id)]);
+  const currentPendingSeconds = isCurrentDevicePending ? Math.max(0, Math.floor((now - pendingLocates[String(device.id)]) / 1000)) : 0;
+  const otherPendingIds = Object.keys(pendingLocates).filter((id) => !device || String(id) !== String(device.id));
+  const otherPendingDevices = otherPendingIds
+    .map((id) => devices.find((d: any) => String(d.id) === String(id)))
+    .filter(Boolean);
+  const otherPendingSeconds = otherPendingIds.length > 0
+    ? Math.max(0, Math.floor((now - pendingLocates[otherPendingIds[0]]) / 1000))
+    : 0;
+
+  const handleLocate = useCallback(async () => {
+    if (!device) return;
+    setActionLoading(true);
+    const devIdStr = String(device.id);
+    const devName = getTacticalName(device);
+    try {
+      setPendingLocates((prev) => ({ ...prev, [devIdStr]: Date.now() }));
+      addLog(`[${formatActivityTime(new Date())}] تم إرسال طلب تحديد موقع ${devName} (جاري انتظار استجابة الموبايل...)`);
+      await locateDevice(device.id);
+      optimisticPing();
+      await fetchDevicesInner();
+      [3000, 8000, 15000].forEach((delay) => {
+        window.setTimeout(() => {
+          if (document.visibilityState === 'visible') fetchDevicesInner();
+        }, delay);
+      });
+    } catch {
+      setPendingLocates((prev) => {
+        const next = { ...prev };
+        delete next[devIdStr];
+        return next;
+      });
+      alert('Failed to execute GPS Locate');
+    } finally {
+      setActionLoading(false);
+    }
+  }, [device?.id, device?.name, device?.device_name, device?.device_uid, addLog]);
+  const handleStartScream  = async () => {
+    if (!device) return;
+    try {
+      addLog(`[${formatActivityTime(new Date())}] تم إرسال أمر تشغيل الإنذار/الرنين إلى ${getTacticalName(device)}`);
+      await screamDevice(device.id);
+      setDevice((p: any) => ({ ...p, is_screaming: true }));
+      setRtState((p: any) => p ? { ...p, is_screaming: true } : null);
+      optimisticPing();
+      await fetchDevicesInner();
+    } catch {
+      alert('Failed to execute Scream Alert');
+    }
+  };
   const handleStopScreamClick = () => { if (!device) return; setShowPasswordModal(true); };
   const handleStopScream   = async () => { if (!device) return; setActionLoading(true); try { await stopScreamDevice(device.id, passwordInput.trim()); setShowPasswordModal(false); setPasswordInput(''); setDevice((p:any)=>p?{...p,is_screaming:false}:null); setRtState((p:any)=>p?{...p,is_screaming:false}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Invalid Password'); } finally { setActionLoading(false); } };
   const handleStartSearch  = async () => { if (!device) return; try { await startSearchMode(device.id, 30); setDevice((p:any)=>({...p,is_searching:true})); setRtState((p:any)=>p?{...p,is_searching:true}:null); optimisticPing(); await fetchDevicesInner(); } catch { alert('Failed to execute BLE Radar'); } };
@@ -629,15 +739,22 @@ export default function DashboardClient() {
   const handleDeleteDevice = async () => { if (!device) return; setActionLoading(true); try { await deleteDevice(device.id, deletePasswordInput.trim()); setShowDeleteModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==device.id); setDevices(r); setDevice(r.length>0?r[0]:null); } catch { alert('Failed to Remove Device. Invalid Password.'); } finally { setActionLoading(false); } };
   const handleUnregisterDevice = async () => { if (!unregisterTarget) return; setActionLoading(true); try { await deleteDevice(unregisterTarget.id, deletePasswordInput.trim()); setShowUnregisterModal(false); setDeletePasswordInput(''); const r=devices.filter((d:any)=>d.id!==unregisterTarget.id); setDevices(r); if(device?.id===unregisterTarget.id) setDevice(r.length>0?r[0]:null); setUnregisterTarget(null); } catch { alert('Failed to Remove Device. Invalid Password.'); } finally { setActionLoading(false); } };
 
-    const commands = [
-      { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
-      { label: 'Scream Alert',          sub: isScreaming ? 'Mute Siren' : 'Force Siren',      icon: isScreaming ? <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" /> : <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: isScreaming ? 'slate' : 'blue', onClick: isScreaming ? handleStopScreamClick : handleStartScream, disabled: !device },
-      { label: 'GPS Locate',            sub: pendingLocate && String(pendingLocate.deviceId) === String(device?.id) ? 'Waiting for phone' : 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleLocate, disabled: !device || actionLoading },
-      { label: isSearching ? 'Stop BLE Radar' : 'BLE Radar', sub: isSearching ? 'Stop peer discovery' : 'Start offline discovery', icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: isSearching ? 'slate' : 'indigo', onClick: isSearching ? handleStopSearch : handleStartSearch, disabled: !device || actionLoading },
-      { label: 'Mark Stolen',           sub: 'Lock Protocol',    icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'rose', onClick: handleStartStolen, disabled: !!isStolen || !device },
-      { label: 'Unmark Stolen',         sub: 'Recovered Status', icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
-      { label: 'Remove Device',         sub: 'Delete Record',    icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'slate', onClick: handleDeleteClick, disabled: !device || actionLoading },
-    ];
+  const commands = [
+    { label: 'Extreme Power Saver', sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
+    { label: 'Scream Alert', sub: isScreaming ? 'Mute Siren' : 'Force Siren', icon: isScreaming ? <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" /> : <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: isScreaming ? 'slate' : 'blue', onClick: isScreaming ? handleStopScreamClick : handleStartScream, disabled: !device },
+    {
+      label: 'GPS Locate',
+      sub: isCurrentDevicePending ? `مستني الرد (${currentPendingSeconds}s)` : 'Fetch Live GPS',
+      icon: <MapPin className={`w-5 h-5 sm:w-6 sm:h-6 ${isCurrentDevicePending ? 'animate-bounce text-amber-600' : ''}`} />,
+      color: isCurrentDevicePending ? 'amber' : 'emerald',
+      onClick: handleLocate,
+      disabled: !device || actionLoading,
+    },
+    { label: isSearching ? 'Stop BLE Radar' : 'BLE Radar', sub: isSearching ? 'Stop peer discovery' : 'Start offline discovery', icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: isSearching ? 'slate' : 'indigo', onClick: isSearching ? handleStopSearch : handleStartSearch, disabled: !device || actionLoading },
+    { label: 'Mark Stolen', sub: 'Lock Protocol', icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'rose', onClick: handleStartStolen, disabled: !!isStolen || !device },
+    { label: 'Unmark Stolen', sub: 'Recovered Status', icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
+    { label: 'Remove Device', sub: 'Delete Record', icon: <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'slate', onClick: handleDeleteClick, disabled: !device || actionLoading },
+  ];
   const btnColors: Record<string,string> = {
     blue:    'bg-blue-50 text-blue-600',
     slate:   'bg-slate-100 text-slate-600',
@@ -710,28 +827,40 @@ export default function DashboardClient() {
           <input type="text" placeholder="Search units..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full h-8 pr-8 pr-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
         </div>
         <div className="flex flex-col gap-1.5">
-          {(filteredDevices.length > 0) ? filteredDevices.map(d => (
-            <div key={d.id} onClick={() => { setDevice(d); setShowMobileMenu(false); }}
-              className={`p-2.5 rounded-xl border cursor-pointer transition-all ${device?.id === d.id ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <Smartphone className={`w-3.5 h-3.5 ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <span className={`font-bold text-xs truncate max-w-[120px] ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>
-                      {getTacticalName(d)}
-                    </span>
+          {(filteredDevices.length > 0) ? filteredDevices.map(d => {
+            const isPending = Boolean(pendingLocates[String(d.id)]);
+            const pendingSec = isPending ? Math.max(0, Math.floor((now - pendingLocates[String(d.id)]) / 1000)) : 0;
+            return (
+              <div key={d.id} onClick={() => { setDevice(d); setShowMobileMenu(false); }}
+                className={`p-2.5 rounded-xl border cursor-pointer transition-all ${device?.id === d.id ? 'bg-blue-50 border-blue-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <Smartphone className={`w-3.5 h-3.5 ${device?.id === d.id ? 'text-blue-600' : 'text-slate-400'}`} />
+                      <span className={`font-bold text-xs truncate max-w-[120px] ${device?.id === d.id ? 'text-blue-900' : 'text-slate-700'}`}>
+                        {getTacticalName(d)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {isPending && (
+                      <span className="flex items-center gap-1 bg-amber-100 text-amber-800 border border-amber-300 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold animate-pulse">
+                        <MapPin className="w-2.5 h-2.5" />
+                        {pendingSec}s
+                      </span>
+                    )}
+                    {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
                   </div>
                 </div>
-                {d.is_stolen && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />}
+                <div className="flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-slate-500 truncate">{`Android ${d?.android_version || '10'} • ${d?.device_model || d?.model || d?.brand || ''}`}</span>
+                  <span className={`px-1 py-0.5 rounded flex items-center gap-0.5 ${(d?.battery_level ?? 0) > 20 ? 'bg-slate-100 text-slate-600' : 'bg-rose-100 text-rose-700'}`}>
+                    <Battery className="w-2.5 h-2.5" />{d?.battery_level ?? 0}%
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between text-[10px] font-mono">
-                <span className="text-slate-500 truncate">{`Android ${d?.android_version || '10'} • ${d?.device_model || d?.model || d?.brand || ''}`}</span>
-                <span className={`px-1 py-0.5 rounded flex items-center gap-0.5 ${(d?.battery_level ?? 0) > 20 ? 'bg-slate-100 text-slate-600' : 'bg-rose-100 text-rose-700'}`}>
-                  <Battery className="w-2.5 h-2.5" />{d?.battery_level ?? 0}%
-                </span>
-              </div>
-            </div>
-          )) : <div className="text-xs text-slate-400 text-center py-4">No devices found</div>}
+            );
+          }) : <div className="text-xs text-slate-400 text-center py-4">No devices found</div>}
         </div>
       </div>
 
@@ -828,12 +957,29 @@ export default function DashboardClient() {
                   </div>
                   <div className="max-h-80 overflow-y-auto p-2">
                     {notifications.length ? notifications.map((item) => (
-                      <div key={item.id} className={`mb-2 rounded-xl border px-3 py-2 last:mb-0 ${notificationToneClasses[item.tone]}`}>
+                      <div
+                        key={item.id}
+                        onClick={() => {
+                          if (item.deviceId) {
+                            const target = devices.find((d: any) => String(d.id) === String(item.deviceId));
+                            if (target) {
+                              setDevice(target);
+                              setNotificationsOpen(false);
+                            }
+                          }
+                        }}
+                        className={`mb-2 rounded-xl border px-3 py-2 last:mb-0 transition hover:shadow-sm cursor-pointer ${notificationToneClasses[item.tone]}`}
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <span className="text-xs font-extrabold leading-snug">{item.title}</span>
                           <span className="shrink-0 text-[9px] font-mono opacity-70">{formatActivityTime(item.createdAt)}</span>
                         </div>
                         <p className="mt-1 text-[10px] leading-relaxed opacity-85">{item.detail}</p>
+                        {item.deviceId && (
+                          <div className="mt-1.5 flex justify-end">
+                            <span className="text-[9px] font-bold text-blue-600 underline">عرض الجهاز &larr;</span>
+                          </div>
+                        )}
                       </div>
                     )) : (
                       <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-6 text-center text-xs font-semibold text-slate-400">
@@ -892,19 +1038,45 @@ export default function DashboardClient() {
                 </div>
               </div>
 
-              {(pendingLocate && String(pendingLocate.deviceId) === String(device?.id)) || locationNotice ? (
-                <div className={`rounded-2xl border px-4 py-3 shadow-sm flex items-center justify-between gap-3 ${locationNotice ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+              {locationNotice ? (
+                <div className="rounded-2xl border px-4 py-3 shadow-sm flex items-center justify-between gap-3 bg-emerald-50 border-emerald-200 text-emerald-800 animate-in fade-in duration-300">
                   <div className="flex items-center gap-2 min-w-0">
-                    {locationNotice ? <CheckCircle className="w-4 h-4 shrink-0" /> : <MapPin className="w-4 h-4 shrink-0 animate-pulse" />}
+                    <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
                     <span className="text-xs sm:text-sm font-bold truncate">
-                      {locationNotice || `مستني رد الموبايل على طلب موقع ${getTacticalName(device)}`}
+                      {locationNotice}
                     </span>
                   </div>
-                  {!locationNotice && (
-                    <span className="text-[10px] font-mono opacity-80 shrink-0">
-                      {pendingLocate ? Math.max(0, Math.floor((now - pendingLocate.requestedAt) / 1000)) : 0}s
+                  <span className="text-[10px] font-mono bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-lg shrink-0">
+                    تم التحديث الآن
+                  </span>
+                </div>
+              ) : isCurrentDevicePending ? (
+                <div className="rounded-2xl border px-4 py-3 shadow-sm flex items-center justify-between gap-3 bg-amber-50 border-amber-200 text-amber-800 animate-in fade-in duration-300">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin className="w-4 h-4 shrink-0 animate-pulse text-amber-600" />
+                    <span className="text-xs sm:text-sm font-bold truncate">
+                      مستني رد الموبايل على طلب موقع {getTacticalName(device)}
                     </span>
-                  )}
+                  </div>
+                  <span className="text-xs font-mono font-bold bg-amber-200/70 text-amber-900 px-2 py-0.5 rounded-lg shrink-0">
+                    {currentPendingSeconds}s
+                  </span>
+                </div>
+              ) : otherPendingDevices.length > 0 ? (
+                <div className="rounded-2xl border px-4 py-3 shadow-sm flex items-center justify-between gap-3 bg-indigo-50 border-indigo-200 text-indigo-900 animate-in fade-in duration-300">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin className="w-4 h-4 shrink-0 animate-pulse text-indigo-600" />
+                    <span className="text-xs sm:text-sm font-bold truncate">
+                      جاري انتظار رد موقع {otherPendingDevices.map(d => getTacticalName(d)).join('، ')} في الخلفية ({otherPendingSeconds}s)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDevice(otherPendingDevices[0])}
+                    className="text-xs font-bold bg-indigo-600 text-white px-2.5 py-1 rounded-lg shrink-0 hover:bg-indigo-700 transition"
+                  >
+                    عرض الجهاز
+                  </button>
                 </div>
               ) : null}
 
