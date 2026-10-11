@@ -8,7 +8,7 @@ import { useTerminalStore } from '@/store/useTerminalStore';
 import { Shield, Zap, User, Smartphone, Search, AlertTriangle, ShieldCheck,
   Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings, Map, Activity,
   Eye, EyeOff, LogOut, Radar, MapPin, Crosshair,
-  Bluetooth, BluetoothSearching, CheckCircle,
+  BluetoothSearching, CheckCircle,
   Terminal, ShieldAlert, Copy, Check
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -140,9 +140,22 @@ const formatActivityLine = (entry: any) => {
   const distance = firstNumber(payload.distance_meters, metadata.distance_meters, payload.distance);
   const time = formatActivityTime(entry?.timestamp || entry?.created_at);
 
+  if (action === 'LOCATION_RECEIVED') {
+    const parts = [`[${time}] ${deviceName}: وصل موقع جديد`];
+    if (lat != null && lng != null) parts.push(`${compactCoordinate(lat)}, ${compactCoordinate(lng)}`);
+    if (payload.accuracy != null) parts.push(`دقة ${Number(payload.accuracy).toFixed(0)}م`);
+    return parts.join(' ');
+  }
+
   if (command || action.includes('COMMAND')) {
     const commandName = (command || action).toUpperCase();
     const label = commandLabels[commandName] || commandName;
+    if (action === 'COMMAND_DEDUPED') {
+      return `[${time}] ${deviceName}: ${label} موجود بالفعل، مستني رد الموبايل`;
+    }
+    if (action === 'COMMAND_TIMEOUT') {
+      return `[${time}] ${deviceName}: ${label} انتهت مهلة الرد`;
+    }
     const state = action.includes('QUEUED')
       ? 'اتسجل'
       : action.includes('SENT')
@@ -214,9 +227,10 @@ export default function DashboardClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [serverActivity, setServerActivity] = useState<any[]>([]);
-  const [activityVisibleCount, setActivityVisibleCount] = useState(5);
-  const [selectedActivityIds, setSelectedActivityIds] = useState<number[]>([]);
+  const [pendingLocate, setPendingLocate] = useState<{ deviceId: number | string; requestedAt: number } | null>(null);
+  const [locationNotice, setLocationNotice] = useState<string | null>(null);
   const devicesRefreshInFlight = useRef(false);
+  const lastLocationNoticeKey = useRef<string | null>(null);
 
   const allLogs = useTerminalStore((state) => state.logs);
   const clearLogs = useTerminalStore((state) => state.clearLogs);
@@ -261,7 +275,6 @@ export default function DashboardClient() {
         await api.delete('/logs');
       }
       setServerActivity([]);
-      setSelectedActivityIds([]);
       clearLogs();
     } catch {
       clearLogs();
@@ -270,23 +283,6 @@ export default function DashboardClient() {
       setClearingLogs(false);
     }
   }, [clearLogs, serverActivity.length]);
-
-  const offlineActivities = useMemo(() => serverActivity.filter((entry: any) => {
-    const payload = entry?.payload || {};
-    const target = String(payload.target_uid || '');
-    return !device?.device_uid || target === device.device_uid || target.endsWith(String(device.device_uid).slice(-8));
-  }), [serverActivity, device?.device_uid]);
-
-  const deleteActivityLogs = async (ids: number[]) => {
-    if (!ids.length || !window.confirm(`Delete ${ids.length} activity record(s)?`)) return;
-    try {
-      await Promise.all(ids.map(id => api.delete(`/logs/${id}`)));
-      setServerActivity(current => current.filter(entry => !ids.includes(Number(entry.id))));
-      setSelectedActivityIds(current => current.filter(id => !ids.includes(id)));
-    } catch {
-      alert('Failed to delete activity records');
-    }
-  };
 
   useEffect(() => {
     const loadServerActivity = async () => {
@@ -339,6 +335,7 @@ export default function DashboardClient() {
   const latitude: number  = rawLat ? Number(rawLat) : 0;
   const longitude: number = rawLng ? Number(rawLng) : 0;
   const accuracy: number  = rawAcc ? Number(rawAcc) : 0;
+  const locationRecordedAt = locObj.recorded_at ?? device?.last_location?.recorded_at;
   const relaySource = statusObj.relay_source ?? locObj.relay_source ?? device?.relay_source ?? device?.last_location?.relay_source;
 
   useEffect(() => {
@@ -349,6 +346,40 @@ export default function DashboardClient() {
       return updated.length > 50 ? updated.slice(-50) : updated;
     });
   }, [latitude, longitude]);
+
+  useEffect(() => {
+    if (!pendingLocate || !device || String(pendingLocate.deviceId) !== String(device.id)) return;
+    if (!latitude || !longitude) return;
+
+    const recordedTime = locationRecordedAt ? new Date(String(locationRecordedAt)).getTime() : Date.now();
+    if (Number.isFinite(recordedTime) && recordedTime + 5000 < pendingLocate.requestedAt) return;
+
+    const key = `${device.id}:${locationRecordedAt || `${latitude},${longitude}`}`;
+    if (lastLocationNoticeKey.current === key) return;
+
+    lastLocationNoticeKey.current = key;
+    setPendingLocate(null);
+    setLocationNotice(`وصل موقع ${getTacticalName(device)} الآن`);
+    window.setTimeout(() => setLocationNotice(null), 5000);
+  }, [device, latitude, longitude, locationRecordedAt, pendingLocate]);
+
+  useEffect(() => {
+    const locationEntry = serverActivity.find((entry: any) => String(entry?.action || '').toUpperCase() === 'LOCATION_RECEIVED');
+    if (!pendingLocate || !locationEntry || !device) return;
+    if (locationEntry.device_id && String(locationEntry.device_id) !== String(device.id)) return;
+    if (!locationEntry.device_id && String(locationEntry.device_name || '') && String(locationEntry.device_name) !== String(device.device_name || '')) return;
+
+    const eventTime = new Date(String(locationEntry.timestamp || '')).getTime();
+    if (Number.isFinite(eventTime) && eventTime + 5000 < pendingLocate.requestedAt) return;
+
+    const key = `${locationEntry.id || locationEntry.timestamp}`;
+    if (lastLocationNoticeKey.current === key) return;
+
+    lastLocationNoticeKey.current = key;
+    setPendingLocate(null);
+    setLocationNotice(`وصل موقع ${getTacticalName(device)} الآن`);
+    window.setTimeout(() => setLocationNotice(null), 5000);
+  }, [device, pendingLocate, serverActivity]);
 
   const isScreaming  = statusObj.is_screaming  ?? device?.is_screaming;
   const isStolen     = statusObj.is_stolen     ?? device?.is_stolen;
@@ -407,6 +438,7 @@ export default function DashboardClient() {
       if (!device) return;
       setActionLoading(true);
       try {
+        setPendingLocate({ deviceId: device.id, requestedAt: Date.now() });
         await locateDevice(device.id);
         optimisticPing();
         await fetchDevicesInner();
@@ -436,7 +468,7 @@ export default function DashboardClient() {
     const commands = [
       { label: 'Extreme Power Saver',   sub: isPowerSaver ? 'Disable Saver' : 'Activate Saver', icon: <Zap className="w-5 h-5 sm:w-6 sm:h-6" />, color: isPowerSaver ? 'amber' : 'emerald', onClick: handleTogglePowerSaver, disabled: !device || actionLoading },
       { label: 'Scream Alert',          sub: isScreaming ? 'Mute Siren' : 'Force Siren',      icon: isScreaming ? <VolumeX className="w-5 h-5 sm:w-6 sm:h-6" /> : <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />, color: isScreaming ? 'slate' : 'blue', onClick: isScreaming ? handleStopScreamClick : handleStartScream, disabled: !device },
-      { label: 'GPS Locate',            sub: 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleLocate, disabled: !device || actionLoading },
+      { label: 'GPS Locate',            sub: pendingLocate && String(pendingLocate.deviceId) === String(device?.id) ? 'Waiting for phone' : 'Fetch Live GPS',   icon: <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleLocate, disabled: !device || actionLoading },
       { label: isSearching ? 'Stop BLE Radar' : 'BLE Radar', sub: isSearching ? 'Stop peer discovery' : 'Start offline discovery', icon: <BluetoothSearching className="w-5 h-5 sm:w-6 sm:h-6" />, color: isSearching ? 'slate' : 'indigo', onClick: isSearching ? handleStopSearch : handleStartSearch, disabled: !device || actionLoading },
       { label: 'Mark Stolen',           sub: 'Lock Protocol',    icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'rose', onClick: handleStartStolen, disabled: !!isStolen || !device },
       { label: 'Unmark Stolen',         sub: 'Recovered Status', icon: <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />, color: 'emerald', onClick: handleStopStolenClick, disabled: !isStolen || !device },
@@ -639,6 +671,22 @@ export default function DashboardClient() {
                   </div>
                 </div>
               </div>
+
+              {(pendingLocate && String(pendingLocate.deviceId) === String(device?.id)) || locationNotice ? (
+                <div className={`rounded-2xl border px-4 py-3 shadow-sm flex items-center justify-between gap-3 ${locationNotice ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {locationNotice ? <CheckCircle className="w-4 h-4 shrink-0" /> : <MapPin className="w-4 h-4 shrink-0 animate-pulse" />}
+                    <span className="text-xs sm:text-sm font-bold truncate">
+                      {locationNotice || `مستني رد الموبايل على طلب موقع ${getTacticalName(device)}`}
+                    </span>
+                  </div>
+                  {!locationNotice && (
+                    <span className="text-[10px] font-mono opacity-80 shrink-0">
+                      {pendingLocate ? Math.max(0, Math.floor((now - pendingLocate.requestedAt) / 1000)) : 0}s
+                    </span>
+                  )}
+                </div>
+              ) : null}
 
               {/* ── Map ── */}
               <div className="bg-white rounded-2xl sm:rounded-3xl p-1.5 sm:p-4 border border-slate-200/80 shadow-sm relative">
