@@ -9,7 +9,7 @@ import { Shield, Zap, User, Smartphone, Search, AlertTriangle, ShieldCheck,
   Volume2, VolumeX, Battery, Wifi, Trash2, Menu, X, Settings, Map, Activity,
   Eye, EyeOff, LogOut, Radar, MapPin, Crosshair,
   BluetoothSearching, CheckCircle,
-  Terminal, ShieldAlert, Copy, Check
+  Terminal, ShieldAlert, Copy, Check, Bell
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import SettingsModal from '@/components/modals/SettingsModal';
@@ -25,8 +25,9 @@ const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
   ),
 });
 
-const IMPORTANT_ACTIVITY_PATTERN = /(command|locate|location|gps|ble|sms|relay|offline|scream|siren|stolen|found|lock|track|power|photo|network|error|fail|proximity)/i;
+const IMPORTANT_ACTIVITY_PATTERN = /(command|locate|location|gps|ble|sms|relay|offline|scream|siren|stolen|found|lock|track|power|photo|network|error|fail|proximity|install|register)/i;
 const NOISY_CLIENT_LOG_PATTERN = /(?:SYS\/\/(?:REQ|RES).*(?:\/logs|\/devices|\/auth\/me)|\b(?:REQ|RES)\s+GET\s+\/(?:logs|devices|auth\/me)\b)/i;
+const NOTIFICATION_STORAGE_KEY = 'zex_dashboard_notifications_v1';
 const commandLabels: Record<string, string> = {
   LOCATE: 'طلب تحديد الموقع',
   CONTINUOUS_TRACK: 'تشغيل التتبع المستمر',
@@ -153,6 +154,9 @@ const formatActivityLine = (entry: any) => {
     if (action === 'COMMAND_DEDUPED') {
       return `[${time}] ${deviceName}: ${label} موجود بالفعل، مستني رد الموبايل`;
     }
+    if (action === 'COMMAND_WAITING') {
+      return `[${time}] ${deviceName}: ${label} لسه مستني الموبايل يستلمه`;
+    }
     if (action === 'COMMAND_TIMEOUT') {
       return `[${time}] ${deviceName}: ${label} انتهت مهلة الرد`;
     }
@@ -179,6 +183,10 @@ const formatActivityLine = (entry: any) => {
     return parts.join(' ');
   }
 
+  if (/INSTALL|REGISTER/i.test(`${action} ${message}`)) {
+    return `[${time}] ${deviceName}: الجهاز اتسجل على النظام`;
+  }
+
   return `[${time}] ${deviceName}: ${message}`;
 };
 
@@ -188,6 +196,72 @@ const terminalLineClass = (line: string) => {
   if (/\b(OFFLINE|BLE|SMS|RELAY|PROXIMITY)\b/i.test(line)) return 'text-amber-200';
   if (/\b(LOCATION|GPS|LOCATE)\b/i.test(line)) return 'text-emerald-300';
   return 'text-slate-300';
+};
+
+type DashboardNotification = {
+  id: string;
+  tone: 'info' | 'success' | 'warning' | 'danger';
+  title: string;
+  detail: string;
+  deviceName: string;
+  createdAt: string;
+  read: boolean;
+};
+
+const activityNotification = (entry: any): DashboardNotification | null => {
+  const payload = asObject(entry?.payload);
+  const metadata = asObject(entry?.metadata);
+  const action = firstText(entry?.action, '').toUpperCase();
+  const command = firstText(payload.command, payload.command_type, metadata.command, metadata.command_type);
+  const commandName = command ? (commandLabels[command.toUpperCase()] || command.toUpperCase()) : '';
+  const deviceName = firstText(entry?.device_name, payload.device_name, payload.source_uid, 'device');
+  const createdAt = String(entry?.timestamp || entry?.created_at || new Date().toISOString());
+  const id = String(entry?.id || `${action}:${deviceName}:${createdAt}:${command}`);
+  const line = formatActivityLine(entry).replace(/^\[[^\]]+\]\s*/, '');
+
+  if (action === 'LOCATION_RECEIVED') {
+    return { id, tone: 'success', title: `وصل موقع ${deviceName}`, detail: line, deviceName, createdAt, read: false };
+  }
+
+  if (action === 'COMMAND_SENT') {
+    return { id, tone: 'info', title: `${deviceName} استلم الأمر`, detail: commandName || line, deviceName, createdAt, read: false };
+  }
+
+  if (action === 'COMMAND_RESPONSE') {
+    const status = firstText(metadata.status, payload.status).toUpperCase();
+    const failed = status === 'FAILED';
+    return {
+      id,
+      tone: failed ? 'danger' : 'success',
+      title: failed ? `${deviceName} فشل في تنفيذ الأمر` : `${deviceName} نفذ الأمر`,
+      detail: commandName || line,
+      deviceName,
+      createdAt,
+      read: false,
+    };
+  }
+
+  if (action === 'COMMAND_WAITING') {
+    return { id, tone: 'warning', title: `${deviceName} لسه مستلمش الأمر`, detail: commandName || line, deviceName, createdAt, read: false };
+  }
+
+  if (action === 'COMMAND_TIMEOUT') {
+    return { id, tone: 'danger', title: `${deviceName} مردش على الأمر`, detail: commandName || line, deviceName, createdAt, read: false };
+  }
+
+  if (action.includes('STOLEN')) {
+    return { id, tone: 'danger', title: `${deviceName} وضع السرقة اتفعل`, detail: line, deviceName, createdAt, read: false };
+  }
+
+  if (action.includes('FOUND')) {
+    return { id, tone: 'success', title: `${deviceName} خرج من وضع السرقة`, detail: line, deviceName, createdAt, read: false };
+  }
+
+  if (/INSTALL|REGISTER/i.test(`${action} ${entry?.message || ''}`)) {
+    return { id, tone: 'info', title: `${deviceName} اتسجل على النظام`, detail: line, deviceName, createdAt, read: false };
+  }
+
+  return null;
 };
 
 export default function DashboardClient() {
@@ -229,8 +303,11 @@ export default function DashboardClient() {
   const [serverActivity, setServerActivity] = useState<any[]>([]);
   const [pendingLocate, setPendingLocate] = useState<{ deviceId: number | string; requestedAt: number } | null>(null);
   const [locationNotice, setLocationNotice] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<DashboardNotification[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const devicesRefreshInFlight = useRef(false);
   const lastLocationNoticeKey = useRef<string | null>(null);
+  const seenActivityNotifications = useRef<Set<string>>(new Set());
 
   const allLogs = useTerminalStore((state) => state.logs);
   const clearLogs = useTerminalStore((state) => state.clearLogs);
@@ -288,15 +365,78 @@ export default function DashboardClient() {
     const loadServerActivity = async () => {
       try {
         const response = await api.get('/logs');
-        setServerActivity(Array.isArray(response.data) ? response.data.slice(0, 20) : []);
+        setServerActivity(Array.isArray(response.data) ? response.data.slice(0, 80) : []);
       } catch {
         // The main dashboard remains usable when the activity endpoint is unavailable.
       }
     };
     loadServerActivity();
-    const refresh = setInterval(loadServerActivity, 10000);
+    const refresh = setInterval(loadServerActivity, 5000);
     return () => clearInterval(refresh);
   }, []);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(NOTIFICATION_STORAGE_KEY);
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        setNotifications(parsed.slice(0, 50));
+        seenActivityNotifications.current = new Set(parsed.map((item: DashboardNotification) => item.id));
+      }
+    } catch {
+      // Session notifications are best-effort only.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(NOTIFICATION_STORAGE_KEY, JSON.stringify(notifications.slice(0, 50)));
+    } catch {
+      // Keep the dashboard usable if session storage is unavailable.
+    }
+  }, [notifications]);
+
+  useEffect(() => {
+    const fresh: DashboardNotification[] = [];
+
+    serverActivity
+      .slice()
+      .reverse()
+      .forEach((entry: any) => {
+        const notification = activityNotification(entry);
+        if (!notification || seenActivityNotifications.current.has(notification.id)) return;
+        seenActivityNotifications.current.add(notification.id);
+        fresh.push(notification);
+      });
+
+    if (!fresh.length) return;
+    setNotifications((current) => {
+      const known = new Set(current.map((item) => item.id));
+      return [...fresh.filter((item) => !known.has(item.id)).reverse(), ...current].slice(0, 50);
+    });
+  }, [serverActivity]);
+
+  const unreadNotifications = notifications.filter((item) => !item.read).length;
+
+  const toggleNotifications = () => {
+    setNotificationsOpen((open) => !open);
+    setNotifications((current) => current.map((item) => ({ ...item, read: true })));
+  };
+
+  const clearNotifications = () => {
+    const visibleIds = serverActivity
+      .map(activityNotification)
+      .filter((item): item is DashboardNotification => Boolean(item))
+      .map((item) => item.id);
+    setNotifications([]);
+    seenActivityNotifications.current = new Set(visibleIds);
+    try {
+      sessionStorage.removeItem(NOTIFICATION_STORAGE_KEY);
+    } catch {
+      // Nothing to clear.
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('zex_token') || localStorage.getItem('zex_auth_token');
@@ -498,6 +638,13 @@ export default function DashboardClient() {
     <DeviceMap latitude={latitude} longitude={longitude} accuracy={accuracy} isOnline={isOnline} batteryLevel={batteryLevel} deviceId={device?.device_uid} history={locationHistory} />
   ), [latitude, longitude, accuracy, isOnline, batteryLevel, device?.device_uid, locationHistory]);
 
+  const notificationToneClasses: Record<DashboardNotification['tone'], string> = {
+    info: 'border-sky-200 bg-sky-50 text-sky-800',
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    warning: 'border-amber-200 bg-amber-50 text-amber-800',
+    danger: 'border-rose-200 bg-rose-50 text-rose-800',
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center p-4 font-mono" dir="ltr">
@@ -624,6 +771,55 @@ export default function DashboardClient() {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={toggleNotifications}
+                className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-700"
+                aria-label="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-rose-600 px-1 text-[9px] font-bold leading-4 text-white">
+                    {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                  </span>
+                )}
+              </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 top-11 z-30 w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2.5">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-extrabold text-slate-900">إشعارات الأجهزة</span>
+                      <span className="text-[10px] text-slate-500">محفوظة في السيشن فقط</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearNotifications}
+                      disabled={!notifications.length}
+                      className="rounded-lg px-2 py-1 text-[10px] font-bold text-slate-500 hover:bg-slate-100 disabled:opacity-40"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto p-2">
+                    {notifications.length ? notifications.map((item) => (
+                      <div key={item.id} className={`mb-2 rounded-xl border px-3 py-2 last:mb-0 ${notificationToneClasses[item.tone]}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-xs font-extrabold leading-snug">{item.title}</span>
+                          <span className="shrink-0 text-[9px] font-mono opacity-70">{formatActivityTime(item.createdAt)}</span>
+                        </div>
+                        <p className="mt-1 text-[10px] leading-relaxed opacity-85">{item.detail}</p>
+                      </div>
+                    )) : (
+                      <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-6 text-center text-xs font-semibold text-slate-400">
+                        مفيش إشعارات جديدة
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <button onClick={() => alert('SOS BROADCAST SENT')} className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-2.5 py-1.5 text-xs font-bold active:scale-95 transition-transform hover:bg-rose-100">
               <AlertTriangle className="w-3.5 h-3.5 animate-pulse shrink-0" />
               <span className="hidden xs:inline">SOS</span>
