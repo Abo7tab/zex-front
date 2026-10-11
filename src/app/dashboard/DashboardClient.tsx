@@ -310,6 +310,7 @@ export default function DashboardClient() {
   const seenActivityNotifications = useRef<Set<string>>(new Set());
 
   const allLogs = useTerminalStore((state) => state.logs);
+  const addLog = useTerminalStore((state) => state.addLog);
   const clearLogs = useTerminalStore((state) => state.clearLogs);
   const [terminalCopied, setTerminalCopied] = useState(false);
   const [clearingLogs, setClearingLogs] = useState(false);
@@ -438,6 +439,15 @@ export default function DashboardClient() {
     }
   };
 
+  const pushSessionNotification = useCallback((notification: DashboardNotification) => {
+    if (seenActivityNotifications.current.has(notification.id)) return;
+    seenActivityNotifications.current.add(notification.id);
+    setNotifications((current) => {
+      if (current.some((item) => item.id === notification.id)) return current;
+      return [notification, ...current].slice(0, 50);
+    });
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('zex_token') || localStorage.getItem('zex_auth_token');
     const hasCookie = document.cookie.includes('zex_token=');
@@ -499,9 +509,23 @@ export default function DashboardClient() {
 
     lastLocationNoticeKey.current = key;
     setPendingLocate(null);
-    setLocationNotice(`وصل موقع ${getTacticalName(device)} الآن`);
+    const deviceName = getTacticalName(device);
+    const receivedAt = new Date().toISOString();
+    const coordinateText = `${compactCoordinate(latitude)}, ${compactCoordinate(longitude)}`;
+    const detail = `${deviceName}: وصل موقع جديد ${coordinateText}${accuracy ? ` دقة ${accuracy.toFixed(0)}م` : ''}`;
+    setLocationNotice(`وصل موقع ${deviceName} الآن`);
+    pushSessionNotification({
+      id: `local-location:${key}`,
+      tone: 'success',
+      title: `وصل موقع ${deviceName}`,
+      detail,
+      deviceName,
+      createdAt: receivedAt,
+      read: false,
+    });
+    addLog(`[${formatActivityTime(receivedAt)}] ${detail}`);
     window.setTimeout(() => setLocationNotice(null), 5000);
-  }, [device, latitude, longitude, locationRecordedAt, pendingLocate]);
+  }, [accuracy, addLog, device, latitude, longitude, locationRecordedAt, pendingLocate, pushSessionNotification]);
 
   useEffect(() => {
     const locationEntry = serverActivity.find((entry: any) => String(entry?.action || '').toUpperCase() === 'LOCATION_RECEIVED');
